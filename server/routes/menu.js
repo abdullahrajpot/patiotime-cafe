@@ -1,18 +1,25 @@
 const express = require('express');
-const Category = require('../models/Category');
 const MenuItem = require('../models/MenuItem');
 
 const router = express.Router();
 
+// Hardcoded categories
+const CATEGORIES = [
+  { id: 'coffees-teas', name: 'Coffees & Teas', eyebrow: 'Best Drinks', sortOrder: 1 },
+  { id: 'bakery-lunch', name: 'Bakery & Lunch', eyebrow: 'Delicious Food', sortOrder: 2 },
+];
+
 // GET /api/menu -> categories with their available items, nested
 router.get('/', async (req, res) => {
   try {
-    const categories = await Category.find().sort({ sortOrder: 1 }).lean();
     const items = await MenuItem.find({ isAvailable: true }).sort({ sortOrder: 1 }).lean();
 
-    const result = categories.map((cat) => ({
-      ...cat,
-      items: items.filter((i) => String(i.category) === String(cat._id)),
+    const result = CATEGORIES.map((cat) => ({
+      _id: cat.id,
+      name: cat.name,
+      eyebrow: cat.eyebrow,
+      sortOrder: cat.sortOrder,
+      items: items.filter((i) => i.category === cat.id),
     }));
 
     res.json(result);

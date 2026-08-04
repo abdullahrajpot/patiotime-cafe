@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const menuItemSchema = new mongoose.Schema({
-  category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
+  category: { type: String, required: true }, // Changed to String for hardcoded categories
   name: { type: String, required: true },
   description: { type: String, default: '' },
   price: { type: Number, required: true },

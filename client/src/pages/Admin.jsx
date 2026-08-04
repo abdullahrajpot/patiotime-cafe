@@ -1,10 +1,116 @@
 import { useEffect, useState, useCallback } from 'react';
-import { getAdminOrders, updateOrderStatus } from '../api';
+import { 
+  getAdminOrders, 
+  updateOrderStatus, 
+  getAdminMenu, 
+  createMenuItem, 
+  updateMenuItem, 
+  deleteMenuItem
+} from '../api';
 
 const STATUSES = ['received', 'preparing', 'ready', 'completed', 'cancelled'];
 const FILTERS = ['all', ...STATUSES];
 
-export default function Admin() {
+// Dashboard Component
+function Dashboard() {
+  const [stats, setStats] = useState({
+    totalOrders: 0,
+    todayOrders: 0,
+    pendingOrders: 0,
+    revenue: 0,
+    menuItems: 0,
+  });
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const orders = await getAdminOrders('all');
+        const menu = await getAdminMenu();
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const todayOrders = orders.filter(o => new Date(o.created_at) >= today);
+        const pending = orders.filter(o => ['received', 'preparing'].includes(o.status));
+        const revenue = orders
+          .filter(o => o.status === 'completed')
+          .reduce((sum, o) => sum + o.total, 0);
+
+        setStats({
+          totalOrders: orders.length,
+          todayOrders: todayOrders.length,
+          pendingOrders: pending.length,
+          revenue: revenue,
+          menuItems: menu.length,
+        });
+      } catch (err) {
+        console.error('Failed to load stats:', err);
+      }
+    };
+
+    loadStats();
+    const interval = setInterval(loadStats, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div>
+      <h2 style={{ marginBottom: 30 }}>Dashboard</h2>
+      
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20, marginBottom: 40 }}>
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: '#c5a059' }}>📊</div>
+          <div className="stat-content">
+            <div className="stat-label">Total Orders</div>
+            <div className="stat-value">{stats.totalOrders}</div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: '#4CAF50' }}>📅</div>
+          <div className="stat-content">
+            <div className="stat-label">Today's Orders</div>
+            <div className="stat-value">{stats.todayOrders}</div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: '#FF9800' }}>⏳</div>
+          <div className="stat-content">
+            <div className="stat-label">Pending Orders</div>
+            <div className="stat-value">{stats.pendingOrders}</div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: '#2196F3' }}>💰</div>
+          <div className="stat-content">
+            <div className="stat-label">Total Revenue</div>
+            <div className="stat-value">${stats.revenue.toFixed(2)}</div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: '#9C27B0' }}>🍽️</div>
+          <div className="stat-content">
+            <div className="stat-label">Menu Items</div>
+            <div className="stat-value">{stats.menuItems}</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ background: '#fff', padding: 24, borderRadius: 4, marginBottom: 20 }}>
+        <h3 style={{ marginBottom: 16 }}>Quick Stats</h3>
+        <p style={{ color: 'var(--muted)', fontSize: 14 }}>
+          Welcome to PatioTime Cafe Admin Panel. Use the sidebar to navigate between different sections.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// Orders Component
+function OrdersTab() {
   const [orders, setOrders] = useState([]);
   const [filter, setFilter] = useState('all');
 
@@ -29,56 +135,458 @@ export default function Admin() {
   };
 
   return (
-    <div style={{ background: '#f3f1ec', minHeight: '100vh' }}>
-      <div className="page-wrap" style={{ maxWidth: 1180 }}>
-        <div className="admin-header">
-          <div>
-            <h2 className="section-title-inline">Order Board</h2>
-            <p style={{ color: 'var(--muted)', margin: 0 }}>Live view of incoming orders</p>
-          </div>
-          <div className="admin-filters">
-            {FILTERS.map((f) => (
-              <button key={f} className={filter === f ? 'active' : ''} onClick={() => setFilter(f)}>
-                {f}
-              </button>
-            ))}
-          </div>
+    <>
+      <div className="admin-header">
+        <div>
+          <h2>Order Management</h2>
+          <p style={{ color: 'var(--muted)', margin: 0 }}>Live view of incoming orders</p>
         </div>
+        <div className="admin-filters">
+          {FILTERS.map((f) => (
+            <button key={f} className={filter === f ? 'active' : ''} onClick={() => setFilter(f)}>
+              {f}
+            </button>
+          ))}
+        </div>
+      </div>
 
-        {orders.length === 0 ? (
-          <div className="empty-state">No orders in this view.</div>
-        ) : (
-          <div className="order-board">
-            {orders.map((o) => (
-              <div className="card" key={o.id}>
-                <div className="order-card-head">
-                  <div>
-                    <div className="order-card-code">{o.order_code}</div>
-                    <div className="order-card-time">{new Date(o.created_at).toLocaleString()}</div>
+      {orders.length === 0 ? (
+        <div className="empty-state">No orders in this view.</div>
+      ) : (
+        <div className="order-board">
+          {orders.map((o) => (
+            <div className="card" key={o.id}>
+              <div className="order-card-head">
+                <div>
+                  <div className="order-card-code">{o.order_code}</div>
+                  <div className="order-card-time">{new Date(o.created_at).toLocaleString()}</div>
+                </div>
+                <span className={`badge-status badge-${o.status}`}>{o.status}</span>
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--muted)' }}>
+                {o.customer_name} • {o.customer_phone}
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--muted)', textTransform: 'capitalize' }}>
+                {o.order_type}{o.address ? ` — ${o.address}` : ''}
+              </div>
+              <div className="order-card-items">
+                {o.items.map((i, idx) => (
+                  <div key={idx}>
+                    <span>{i.quantity} × {i.name}</span>
+                    <span>${(i.price * i.quantity).toFixed(2)}</span>
                   </div>
-                  <span className={`badge-status badge-${o.status}`}>{o.status}</span>
-                </div>
-                <div style={{ fontSize: 13, color: 'var(--muted)' }}>{o.customer_name} • {o.customer_phone}</div>
-                <div style={{ fontSize: 13, color: 'var(--muted)', textTransform: 'capitalize' }}>
-                  {o.order_type}{o.address ? ` — ${o.address}` : ''}
-                </div>
-                <div className="order-card-items">
-                  {o.items.map((i, idx) => (
-                    <div key={idx}><span>{i.quantity} × {i.name}</span><span>${(i.price * i.quantity).toFixed(2)}</span></div>
+                ))}
+              </div>
+              <div className="summary-row total" style={{ fontSize: 15 }}>
+                <span>Total</span><span>${o.total.toFixed(2)}</span>
+              </div>
+              <div className="order-card-actions">
+                <select value={o.status} onChange={(e) => handleStatusChange(o.id, e.target.value)}>
+                  {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+// Menu Management Component
+function MenuTab() {
+  const [items, setItems] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    price: '',
+    category: '',
+    badge: '',
+    image: '',
+    sortOrder: 1,
+  });
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [uploading, setUploading] = useState(false);
+
+  // Hardcoded categories
+  const CATEGORIES = [
+    { value: 'coffees-teas', label: 'Coffees & Teas' },
+    { value: 'bakery-lunch', label: 'Bakery & Lunch' },
+  ];
+
+  const loadMenu = async () => {
+    try {
+      const data = await getAdminMenu();
+      setItems(data);
+    } catch (err) {
+      console.error('Failed to load menu:', err);
+    }
+  };
+
+  useEffect(() => {
+    loadMenu();
+  }, []);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('Only image files (JPEG, PNG, GIF, WEBP) are allowed');
+        return;
+      }
+
+      // Validate file size (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size must be less than 5MB');
+        return;
+      }
+
+      setSelectedFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setUploading(true);
+      let imageFilename = formData.image;
+
+      // If a new file is selected, upload it first
+      if (selectedFile) {
+        const uploadFormData = new FormData();
+        uploadFormData.append('image', selectedFile);
+
+        const uploadResponse = await fetch('/api/admin/upload', {
+          method: 'POST',
+          body: uploadFormData,
+        });
+
+        if (!uploadResponse.ok) {
+          const errorData = await uploadResponse.json();
+          throw new Error(errorData.error || 'Failed to upload image');
+        }
+
+        const uploadData = await uploadResponse.json();
+        imageFilename = uploadData.filename;
+      }
+
+      const payload = {
+        ...formData,
+        image: imageFilename,
+        price: parseFloat(formData.price),
+        sortOrder: parseInt(formData.sortOrder),
+      };
+
+      if (editingItem) {
+        await updateMenuItem(editingItem._id, payload);
+      } else {
+        await createMenuItem(payload);
+      }
+
+      loadMenu();
+      resetForm();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleEdit = (item) => {
+    setEditingItem(item);
+    setFormData({
+      name: item.name,
+      description: item.description,
+      price: item.price.toString(),
+      category: item.category || '',
+      badge: item.badge || '',
+      image: item.image || '',
+      sortOrder: item.sortOrder,
+    });
+    // Set preview for existing image
+    if (item.image) {
+      setImagePreview(`/images/${item.image}`);
+    }
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm('Are you sure you want to delete this item?')) return;
+    try {
+      await deleteMenuItem(id);
+      loadMenu();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      description: '',
+      price: '',
+      category: '',
+      badge: '',
+      image: '',
+      sortOrder: 1,
+    });
+    setEditingItem(null);
+    setShowForm(false);
+    setSelectedFile(null);
+    setImagePreview(null);
+  };
+
+  return (
+    <>
+      <div className="admin-header">
+        <div>
+          <h2>Menu Management</h2>
+          <p style={{ color: 'var(--muted)', margin: 0 }}>Add, edit, or remove menu items</p>
+        </div>
+        <button className="btn btn-solid" onClick={() => setShowForm(!showForm)}>
+          {showForm ? 'Cancel' : '+ Add New Item'}
+        </button>
+      </div>
+
+      {showForm && (
+        <div className="card" style={{ marginBottom: 30 }}>
+          <h3 style={{ marginBottom: 20 }}>{editingItem ? 'Edit Item' : 'Add New Item'}</h3>
+          <form onSubmit={handleSubmit}>
+            <div className="field-row">
+              <div className="field">
+                <label>Item Name *</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="field">
+                <label>Price *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.price}
+                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="field">
+              <label>Description</label>
+              <textarea
+                rows="2"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              />
+            </div>
+
+            <div className="field-row">
+              <div className="field">
+                <label>Category *</label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  required
+                >
+                  <option value="">Select Category</option>
+                  {CATEGORIES.map((cat) => (
+                    <option key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </option>
                   ))}
+                </select>
+              </div>
+              <div className="field">
+                <label>Badge (optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. NEW, SEASONAL"
+                  value={formData.badge}
+                  onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="field">
+              <label>Sort Order</label>
+              <input
+                type="number"
+                value={formData.sortOrder}
+                onChange={(e) => setFormData({ ...formData, sortOrder: e.target.value })}
+                style={{ width: '120px' }}
+              />
+            </div>
+
+            <div className="field">
+              <label>Image Upload</label>
+              <input
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                onChange={handleFileChange}
+                style={{
+                  padding: '8px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '14px',
+                  width: '100%',
+                }}
+              />
+              {imagePreview && (
+                <div style={{ marginTop: 12 }}>
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    style={{
+                      width: 200,
+                      height: 200,
+                      objectFit: 'cover',
+                      borderRadius: 4,
+                      border: '1px solid #ddd',
+                    }}
+                  />
                 </div>
-                <div className="summary-row total" style={{ fontSize: 15 }}>
-                  <span>Total</span><span>${o.total.toFixed(2)}</span>
+              )}
+              {editingItem && !selectedFile && formData.image && (
+                <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8 }}>
+                  Current: {formData.image}
+                </p>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
+              <button type="submit" className="btn btn-solid" disabled={uploading}>
+                {uploading ? 'Uploading...' : editingItem ? 'Update Item' : 'Add Item'}
+              </button>
+              <button type="button" className="btn btn-outline" onClick={resetForm} disabled={uploading}>
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <div className="menu-items-list">
+        {items.length === 0 ? (
+          <div className="empty-state">No menu items found.</div>
+        ) : (
+          <div style={{ display: 'grid', gap: 16 }}>
+            {items.map((item) => (
+              <div className="card" key={item._id} style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+                {item.image && (
+                  <img
+                    src={`/images/${item.image}`}
+                    alt={item.name}
+                    style={{ width: 80, height: 80, objectFit: 'cover', flexShrink: 0 }}
+                  />
+                )}
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <h4 style={{ margin: 0, fontSize: 18 }}>{item.name}</h4>
+                    {item.badge && (
+                      <span className="menu-item-badge">{item.badge}</span>
+                    )}
+                  </div>
+                  <p style={{ margin: '4px 0', fontSize: 13, color: 'var(--muted)' }}>
+                    {item.description}
+                  </p>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 6 }}>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--gold-dark)' }}>
+                      ${item.price.toFixed(2)}
+                    </span>
+                    <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                      • Category: {CATEGORIES.find(c => c.value === item.category)?.label || item.category}
+                    </span>
+                  </div>
                 </div>
-                <div className="order-card-actions">
-                  <select value={o.status} onChange={(e) => handleStatusChange(o.id, e.target.value)}>
-                    {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    className="btn btn-outline"
+                    style={{ padding: '8px 16px', fontSize: 12 }}
+                    onClick={() => handleEdit(item)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="btn btn-outline"
+                    style={{ padding: '8px 16px', fontSize: 12, borderColor: '#b5523f', color: '#b5523f' }}
+                    onClick={() => handleDelete(item._id)}
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         )}
+      </div>
+    </>
+  );
+}
+
+// Main Admin Component with Sidebar
+export default function Admin() {
+  const [activeTab, setActiveTab] = useState('dashboard');
+
+  return (
+    <div className="admin-layout">
+      {/* Sidebar */}
+      <div className="admin-sidebar">
+        <div className="admin-logo">
+          <span style={{ fontFamily: 'Playfair Display', fontSize: 32, fontStyle: 'italic' }}>Pt.</span>
+          <span style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>Admin Panel</span>
+        </div>
+
+        <nav className="admin-nav">
+          <button
+            className={`admin-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
+            onClick={() => setActiveTab('dashboard')}
+          >
+            <span className="nav-icon">📊</span>
+            Dashboard
+          </button>
+          <button
+            className={`admin-nav-item ${activeTab === 'orders' ? 'active' : ''}`}
+            onClick={() => setActiveTab('orders')}
+          >
+            <span className="nav-icon">📦</span>
+            Orders
+          </button>
+          <button
+            className={`admin-nav-item ${activeTab === 'menu' ? 'active' : ''}`}
+            onClick={() => setActiveTab('menu')}
+          >
+            <span className="nav-icon">🍽️</span>
+            Menu Items
+          </button>
+        </nav>
+
+        <div className="admin-sidebar-footer">
+          <a href="/" className="btn btn-ghost-dark" style={{ width: '100%', textAlign: 'center', padding: '10px' }}>
+            ← Back to Site
+          </a>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="admin-content">
+        {activeTab === 'dashboard' && <Dashboard />}
+        {activeTab === 'orders' && <OrdersTab />}
+        {activeTab === 'menu' && <MenuTab />}
       </div>
     </div>
   );

@@ -33,33 +33,54 @@ const brunchItems = [
 ];
 
 async function run() {
-  await mongoose.connect(MONGO_URI);
-  console.log('Connected to MongoDB for seeding:', MONGO_URI);
+  try {
+    console.log('Connecting to MongoDB...');
+    console.log('URI:', MONGO_URI.replace(/:[^:]*@/, ':****@')); // Hide password
+    
+    await mongoose.connect(MONGO_URI);
+    console.log('✅ Connected successfully!\n');
 
-  await Category.deleteMany({});
-  await MenuItem.deleteMany({});
+    console.log('Deleting existing data...');
+    await Category.deleteMany({});
+    await MenuItem.deleteMany({});
+    console.log('✅ Old data cleared\n');
 
-  const coffee = await Category.create({ name: 'Coffees & Teas', eyebrow: 'Best Drinks', sortOrder: 1 });
-  const bakery = await Category.create({ name: 'Bakery & Lunch', eyebrow: 'Delicious Food', sortOrder: 2 });
-  const brunch = await Category.create({ name: 'All-Day Brunch', eyebrow: 'We Also Have', sortOrder: 3 });
+    console.log('Creating categories...');
+    const coffee = await Category.create({ name: 'Coffees & Teas', eyebrow: 'Best Drinks', sortOrder: 1 });
+    const bakery = await Category.create({ name: 'Bakery & Lunch', eyebrow: 'Delicious Food', sortOrder: 2 });
+    const brunch = await Category.create({ name: 'All-Day Brunch', eyebrow: 'We Also Have', sortOrder: 3 });
+    console.log('✅ Created 3 categories\n');
 
-  const buildDocs = (catId, items) =>
-    items.map(([name, description, price, badge, image], i) => ({
-      category: catId,
-      name,
-      description,
-      price,
-      badge,
-      image,
-      sortOrder: i + 1,
-    }));
+    const buildDocs = (catId, items) =>
+      items.map(([name, description, price, badge, image], i) => ({
+        category: catId,
+        name,
+        description,
+        price,
+        badge,
+        image,
+        sortOrder: i + 1,
+      }));
 
-  await MenuItem.insertMany(buildDocs(coffee._id, coffeeItems));
-  await MenuItem.insertMany(buildDocs(bakery._id, bakeryItems));
-  await MenuItem.insertMany(buildDocs(brunch._id, brunchItems));
+    console.log('Creating menu items...');
+    await MenuItem.insertMany(buildDocs(coffee._id, coffeeItems));
+    await MenuItem.insertMany(buildDocs(bakery._id, bakeryItems));
+    await MenuItem.insertMany(buildDocs(brunch._id, brunchItems));
+    console.log('✅ Created 18 menu items\n');
 
-  console.log('Seed complete: 3 categories, 18 menu items.');
-  await mongoose.disconnect();
+    console.log('✅✅✅ Seed complete: 3 categories, 18 menu items. ✅✅✅');
+    console.log('\nCategories created:');
+    console.log('  1. Coffees & Teas');
+    console.log('  2. Bakery & Lunch');
+    console.log('  3. All-Day Brunch\n');
+    
+    await mongoose.disconnect();
+    console.log('✅ Disconnected from database');
+  } catch (err) {
+    console.error('❌ Seed failed:', err.message);
+    console.error(err);
+    process.exit(1);
+  }
 }
 
 run().catch((err) => {

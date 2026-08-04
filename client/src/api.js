@@ -34,3 +34,34 @@ export function updateOrderStatus(id, status) {
     body: JSON.stringify({ status }),
   }).then(handle);
 }
+
+// Admin Menu Management APIs
+export function getAdminMenu() {
+  return fetch(`${BASE}/admin/menu`).then(handle);
+}
+
+export function createMenuItem(payload) {
+  return fetch(`${BASE}/admin/menu`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).then(handle);
+}
+
+export function updateMenuItem(id, payload) {
+  return fetch(`${BASE}/admin/menu/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).then(handle);
+}
+
+export function deleteMenuItem(id) {
+  return fetch(`${BASE}/admin/menu/${id}`, {
+    method: 'DELETE',
+  }).then(handle);
+}
+
+export function getCategories() {
+  return fetch(`${BASE}/admin/categories`).then(handle);
+}

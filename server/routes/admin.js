@@ -1,9 +1,52 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const Order = require('../models/Order');
+const MenuItem = require('../models/MenuItem');
+const Category = require('../models/Category');
 
 const router = express.Router();
 
 const STATUSES = ['received', 'preparing', 'ready', 'completed', 'cancelled'];
+
+// Configure multer for image uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadPath = path.join(__dirname, '../../client/public/images');
+    // Ensure directory exists
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
+  },
+  filename: function (req, file, cb) {
+    // Generate unique filename: timestamp-originalname
+    const uniqueName = Date.now() + '-' + file.originalname.toLowerCase().replace(/\s+/g, '-');
+    cb(null, uniqueName);
+  }
+});
+
+// File filter to accept only images
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = /jpeg|jpg|png|gif|webp/;
+  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = allowedTypes.test(file.mimetype);
+
+  if (mimetype && extname) {
+    return cb(null, true);
+  } else {
+    cb(new Error('Only image files are allowed (jpeg, jpg, png, gif, webp)'));
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: fileFilter
+});
+
+// ========== ORDER MANAGEMENT ==========
 
 // GET /api/admin/orders?status= -> order board list
 router.get('/orders', async (req, res) => {
@@ -45,6 +88,137 @@ router.patch('/orders/:id/status', async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed to update order.' });
+  }
+});
+
+// ========== IMAGE UPLOAD ==========
+
+// POST /api/admin/upload -> upload image
+router.post('/upload', (req, res) => {
+  upload.single('image')(req, res, function (err) {
+    if (err instanceof multer.MulterError) {
+      // Multer error
+      console.error('Multer error:', err);
+      return res.status(400).json({ error: `Upload error: ${err.message}` });
+    } else if (err) {
+      // Other errors
+      console.error('Upload error:', err);
+      return res.status(400).json({ error: err.message });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    
+    // Return the filename to be saved in database
+    res.json({ 
+      filename: req.file.filename,
+      path: `/images/${req.file.filename}`,
+      message: 'Image uploaded successfully'
+    });
+  });
+});
+
+// ========== MENU MANAGEMENT ==========
+
+// GET /api/admin/menu -> get all menu items
+router.get('/menu', async (req, res) => {
+  try {
+    const items = await MenuItem.find().sort({ sortOrder: 1 }).lean();
+    res.json(items);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load menu items.' });
+  }
+});
+
+// POST /api/admin/menu -> create new menu item
+router.post('/menu', async (req, res) => {
+  try {
+    const { name, description, price, category, badge, image, sortOrder } = req.body;
+
+    if (!name || !price || !category) {
+      return res.status(400).json({ error: 'Name, price, and category are required.' });
+    }
+
+    const item = await MenuItem.create({
+      name,
+      description: description || '',
+      price,
+      category,
+      badge: badge || null,
+      image: image || null,
+      sortOrder: sortOrder || 1,
+      isAvailable: true,
+    });
+
+    const populatedItem = await MenuItem.findById(item._id).populate('category');
+    res.status(201).json(populatedItem);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to create menu item.' });
+  }
+});
+
+// PUT /api/admin/menu/:id -> update menu item
+router.put('/menu/:id', async (req, res) => {
+  try {
+    const { name, description, price, category, badge, image, sortOrder, isAvailable } = req.body;
+
+    const item = await MenuItem.findByIdAndUpdate(
+      req.params.id,
+      {
+        name,
+        description,
+        price,
+        category,
+        badge: badge || null,
+        image: image || null,
+        sortOrder,
+        isAvailable: isAvailable !== undefined ? isAvailable : true,
+      },
+      { new: true, runValidators: true }
+    ).populate('category');
+
+    if (!item) return res.status(404).json({ error: 'Menu item not found.' });
+    res.json(item);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update menu item.' });
+  }
+});
+
+// DELETE /api/admin/menu/:id -> delete menu item
+router.delete('/menu/:id', async (req, res) => {
+  try {
+    const item = await MenuItem.findById(req.params.id);
+    if (!item) return res.status(404).json({ error: 'Menu item not found.' });
+
+    // Optionally delete the image file
+    if (item.image) {
+      const imagePath = path.join(__dirname, '../../client/public/images', item.image);
+      if (fs.existsSync(imagePath)) {
+        try {
+          fs.unlinkSync(imagePath);
+        } catch (err) {
+          console.error('Failed to delete image file:', err);
+        }
+      }
+    }
+
+    await MenuItem.findByIdAndDelete(req.params.id);
+    res.json({ ok: true, message: 'Item deleted successfully.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete menu item.' });
+  }
+});
+
+// GET /api/admin/categories -> get all categories
+router.get('/categories', async (req, res) => {
+  try {
+    const categories = await Category.find().sort({ sortOrder: 1 }).lean();
+    res.json(categories);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load categories.' });
   }
 });
 

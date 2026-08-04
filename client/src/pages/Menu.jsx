@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getMenu } from '../api';
 import { useCart } from '../context/CartContext';
-import { MENU_HERO_GRID } from '../utils/images';
+import { HERO_MENU } from '../utils/images';
 import { menuItemImg } from '../utils/images';
 import { MenuColumn, MenuDivider } from '../components/MenuItems';
 import Newsletter from '../components/Newsletter';
@@ -45,23 +45,18 @@ export default function Menu() {
 
   return (
     <>
-      <header className="hero hero-page hero-menu">
-        <div className="hero-menu-grid">
-          {MENU_HERO_GRID.map((src) => (
-            <img key={src} src={src} alt="" />
-          ))}
-        </div>
+      <header className="hero hero-page hero-menu-single" style={{ backgroundImage: `url('${HERO_MENU}')` }}>
         <div className="container hero-inner">
           <h1>Our Menu</h1>
         </div>
         <div className="wave-bottom" aria-hidden="true">
-          <svg viewBox="0 0 1440 80" preserveAspectRatio="none">
-            <path d="M0,40 C360,80 720,0 1080,40 C1260,60 1380,50 1440,40 L1440,80 L0,80 Z" fill="#fff" />
+          <svg viewBox="0 0 1440 100" preserveAspectRatio="none">
+            <path d="M0,50 Q360,100 720,50 T1440,50 L1440,100 L0,100 Z" fill="#fff" />
           </svg>
         </div>
       </header>
 
-      <section className="section">
+      <section className="section menu-page-section">
         <div className="container">
           <div className="menu-grid">
             <MenuColumn

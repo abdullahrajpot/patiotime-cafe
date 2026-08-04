@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const path = require('path');
 
 const menuRoutes = require('./routes/menu');
 const orderRoutes = require('./routes/orders');
@@ -10,6 +11,9 @@ const adminRoutes = require('./routes/admin');
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Serve uploaded images
+app.use('/uploads', express.static(path.join(__dirname, '../client/public/images')));
 
 app.use('/api/menu', menuRoutes);
 app.use('/api/orders', orderRoutes);
