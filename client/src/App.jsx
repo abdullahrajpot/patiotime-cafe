@@ -1,0 +1,25 @@
+import { Routes, Route } from 'react-router-dom';
+import SiteLayout from './layouts/SiteLayout';
+import Home from './pages/Home';
+import About from './pages/About';
+import Menu from './pages/Menu';
+import Cart from './pages/Cart';
+import Checkout from './pages/Checkout';
+import Track from './pages/Track';
+import Admin from './pages/Admin';
+
+export default function App() {
+  return (
+    <Routes>
+      <Route element={<SiteLayout />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/menu" element={<Menu />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/track" element={<Track />} />
+      </Route>
+      <Route path="/admin" element={<Admin />} />
+    </Routes>
+  );
+}
