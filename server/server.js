@@ -7,6 +7,8 @@ const path = require('path');
 const menuRoutes = require('./routes/menu');
 const orderRoutes = require('./routes/orders');
 const adminRoutes = require('./routes/admin');
+const reservationRoutes = require('./routes/reservations');
+const contactRoutes = require('./routes/contact');
 
 const app = express();
 app.use(cors());
@@ -18,6 +20,8 @@ app.use('/uploads', express.static(path.join(__dirname, '../client/public/images
 app.use('/api/menu', menuRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/reservations', reservationRoutes);
+app.use('/api/contact', contactRoutes);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 

@@ -5,7 +5,13 @@ import {
   getAdminMenu, 
   createMenuItem, 
   updateMenuItem, 
-  deleteMenuItem
+  deleteMenuItem,
+  getAdminReservations,
+  updateReservationStatus,
+  deleteReservation,
+  getAdminContacts,
+  updateContactStatus,
+  deleteContact
 } from '../api';
 
 const STATUSES = ['received', 'preparing', 'ready', 'completed', 'cancelled'];
@@ -215,6 +221,7 @@ function MenuTab() {
   const CATEGORIES = [
     { value: 'coffees-teas', label: 'Coffees & Teas' },
     { value: 'bakery-lunch', label: 'Bakery & Lunch' },
+    { value: 'all-day-brunch', label: 'All-Day Brunch' },
   ];
 
   const loadMenu = async () => {
@@ -538,6 +545,202 @@ function MenuTab() {
   );
 }
 
+// Reservations Component
+function ReservationsTab() {
+  const [reservations, setReservations] = useState([]);
+  const [filter, setFilter] = useState('all');
+
+  const load = useCallback(async () => {
+    try {
+      const data = await getAdminReservations(filter);
+      setReservations(data);
+    } catch (err) {
+      console.error('Failed to load reservations:', err);
+    }
+  }, [filter]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const handleStatusChange = async (id, status) => {
+    await updateReservationStatus(id, status);
+    load();
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm('Delete this reservation?')) return;
+    await deleteReservation(id);
+    load();
+  };
+
+  const STATUSES = ['all', 'pending', 'confirmed', 'cancelled', 'completed'];
+
+  return (
+    <>
+      <div className="admin-header">
+        <div>
+          <h2>Reservations</h2>
+          <p style={{ color: 'var(--muted)', margin: 0 }}>Manage table bookings</p>
+        </div>
+        <div className="admin-filters">
+          {STATUSES.map((f) => (
+            <button key={f} className={filter === f ? 'active' : ''} onClick={() => setFilter(f)}>
+              {f}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {reservations.length === 0 ? (
+        <div className="empty-state">No reservations found.</div>
+      ) : (
+        <div style={{ display: 'grid', gap: 16 }}>
+          {reservations.map((res) => (
+            <div key={res._id} className="reservation-card">
+              <div className="reservation-header">
+                <div>
+                  <div className="reservation-name">{res.name}</div>
+                  <div className="reservation-date">
+                    {new Date(res.date).toLocaleDateString()} at {res.time}
+                  </div>
+                </div>
+                <span className={`badge-status badge-${res.status}`}>{res.status}</span>
+              </div>
+              <div className="reservation-info">
+                <strong>Guests:</strong> {res.guests} people<br />
+                <strong>Email:</strong> {res.email}<br />
+                <strong>Phone:</strong> {res.phone}<br />
+                {res.specialRequests && (
+                  <>
+                    <strong>Special Requests:</strong> {res.specialRequests}<br />
+                  </>
+                )}
+                <strong>Created:</strong> {new Date(res.createdAt).toLocaleString()}
+              </div>
+              <div className="reservation-actions">
+                <select 
+                  value={res.status} 
+                  onChange={(e) => handleStatusChange(res._id, e.target.value)}
+                  style={{ padding: '6px 12px', fontSize: '13px' }}
+                >
+                  <option value="pending">Pending</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="cancelled">Cancelled</option>
+                  <option value="completed">Completed</option>
+                </select>
+                <button
+                  className="btn btn-outline"
+                  style={{ padding: '6px 16px', fontSize: '13px', borderColor: '#f44336', color: '#f44336' }}
+                  onClick={() => handleDelete(res._id)}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+// Contacts Component
+function ContactsTab() {
+  const [contacts, setContacts] = useState([]);
+  const [filter, setFilter] = useState('all');
+
+  const load = useCallback(async () => {
+    try {
+      const data = await getAdminContacts(filter);
+      setContacts(data);
+    } catch (err) {
+      console.error('Failed to load contacts:', err);
+    }
+  }, [filter]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const handleStatusChange = async (id, status) => {
+    await updateContactStatus(id, status);
+    load();
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm('Delete this message?')) return;
+    await deleteContact(id);
+    load();
+  };
+
+  const STATUSES = ['all', 'new', 'read', 'replied'];
+
+  return (
+    <>
+      <div className="admin-header">
+        <div>
+          <h2>Contact Messages</h2>
+          <p style={{ color: 'var(--muted)', margin: 0 }}>Customer inquiries and messages</p>
+        </div>
+        <div className="admin-filters">
+          {STATUSES.map((f) => (
+            <button key={f} className={filter === f ? 'active' : ''} onClick={() => setFilter(f)}>
+              {f}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {contacts.length === 0 ? (
+        <div className="empty-state">No messages found.</div>
+      ) : (
+        <div style={{ display: 'grid', gap: 16 }}>
+          {contacts.map((contact) => (
+            <div key={contact._id} className="contact-card">
+              <div className="contact-header">
+                <div>
+                  <div className="contact-name">{contact.name}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
+                    {new Date(contact.createdAt).toLocaleString()}
+                  </div>
+                </div>
+                <span className={`badge-status badge-${contact.status}`}>{contact.status}</span>
+              </div>
+              <div className="contact-info-body">
+                <strong>Email:</strong> {contact.email}<br />
+                <strong>Subject:</strong> {contact.subject}<br />
+                <strong>Message:</strong><br />
+                <div style={{ marginTop: '8px', padding: '12px', background: '#f9f9f9', borderRadius: '4px' }}>
+                  {contact.message}
+                </div>
+              </div>
+              <div className="contact-actions">
+                <select 
+                  value={contact.status} 
+                  onChange={(e) => handleStatusChange(contact._id, e.target.value)}
+                  style={{ padding: '6px 12px', fontSize: '13px' }}
+                >
+                  <option value="new">New</option>
+                  <option value="read">Read</option>
+                  <option value="replied">Replied</option>
+                </select>
+                <button
+                  className="btn btn-outline"
+                  style={{ padding: '6px 16px', fontSize: '13px', borderColor: '#f44336', color: '#f44336' }}
+                  onClick={() => handleDelete(contact._id)}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
 // Main Admin Component with Sidebar
 export default function Admin() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -573,6 +776,20 @@ export default function Admin() {
             <span className="nav-icon">🍽️</span>
             Menu Items
           </button>
+          <button
+            className={`admin-nav-item ${activeTab === 'reservations' ? 'active' : ''}`}
+            onClick={() => setActiveTab('reservations')}
+          >
+            <span className="nav-icon">📅</span>
+            Reservations
+          </button>
+          <button
+            className={`admin-nav-item ${activeTab === 'contacts' ? 'active' : ''}`}
+            onClick={() => setActiveTab('contacts')}
+          >
+            <span className="nav-icon">✉️</span>
+            Contacts
+          </button>
         </nav>
 
         <div className="admin-sidebar-footer">
@@ -587,6 +804,8 @@ export default function Admin() {
         {activeTab === 'dashboard' && <Dashboard />}
         {activeTab === 'orders' && <OrdersTab />}
         {activeTab === 'menu' && <MenuTab />}
+        {activeTab === 'reservations' && <ReservationsTab />}
+        {activeTab === 'contacts' && <ContactsTab />}
       </div>
     </div>
   );

@@ -4,7 +4,8 @@ const path = require('path');
 const fs = require('fs');
 const Order = require('../models/Order');
 const MenuItem = require('../models/MenuItem');
-const Category = require('../models/Category');
+const Reservation = require('../models/Reservation');
+const Contact = require('../models/Contact');
 
 const router = express.Router();
 
@@ -219,6 +220,112 @@ router.get('/categories', async (req, res) => {
     res.json(categories);
   } catch (err) {
     res.status(500).json({ error: 'Failed to load categories.' });
+  }
+});
+
+// ========== RESERVATION MANAGEMENT ==========
+
+// GET /api/admin/reservations -> get all reservations
+router.get('/reservations', async (req, res) => {
+  try {
+    const { status } = req.query;
+    const filter = status && status !== 'all' ? { status } : {};
+    const reservations = await Reservation.find(filter).sort({ date: -1, createdAt: -1 }).lean();
+    res.json(reservations);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load reservations.' });
+  }
+});
+
+// PATCH /api/admin/reservations/:id/status -> update reservation status
+router.patch('/reservations/:id/status', async (req, res) => {
+  try {
+    const { status } = req.body;
+    const validStatuses = ['pending', 'confirmed', 'cancelled', 'completed'];
+    
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Invalid status.' });
+    }
+    
+    const reservation = await Reservation.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+    
+    if (!reservation) {
+      return res.status(404).json({ error: 'Reservation not found.' });
+    }
+    
+    res.json({ ok: true, reservation });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update reservation.' });
+  }
+});
+
+// DELETE /api/admin/reservations/:id -> delete reservation
+router.delete('/reservations/:id', async (req, res) => {
+  try {
+    const reservation = await Reservation.findByIdAndDelete(req.params.id);
+    if (!reservation) {
+      return res.status(404).json({ error: 'Reservation not found.' });
+    }
+    res.json({ ok: true, message: 'Reservation deleted.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete reservation.' });
+  }
+});
+
+// ========== CONTACT MANAGEMENT ==========
+
+// GET /api/admin/contacts -> get all contact messages
+router.get('/contacts', async (req, res) => {
+  try {
+    const { status } = req.query;
+    const filter = status && status !== 'all' ? { status } : {};
+    const contacts = await Contact.find(filter).sort({ createdAt: -1 }).lean();
+    res.json(contacts);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load contacts.' });
+  }
+});
+
+// PATCH /api/admin/contacts/:id/status -> update contact status
+router.patch('/contacts/:id/status', async (req, res) => {
+  try {
+    const { status } = req.body;
+    const validStatuses = ['new', 'read', 'replied'];
+    
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Invalid status.' });
+    }
+    
+    const contact = await Contact.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+    
+    if (!contact) {
+      return res.status(404).json({ error: 'Contact not found.' });
+    }
+    
+    res.json({ ok: true, contact });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update contact.' });
+  }
+});
+
+// DELETE /api/admin/contacts/:id -> delete contact message
+router.delete('/contacts/:id', async (req, res) => {
+  try {
+    const contact = await Contact.findByIdAndDelete(req.params.id);
+    if (!contact) {
+      return res.status(404).json({ error: 'Contact not found.' });
+    }
+    res.json({ ok: true, message: 'Contact deleted.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete contact.' });
   }
 });
 

@@ -3,9 +3,9 @@ export function img(name) {
   return `/images/${name}`;
 }
 
-export const HERO_HOME = img('herobg.jpg');
+export const HERO_HOME = img('herobg.png');
 export const HERO_ABOUT = img('tyler-nix-3uSHEffsDXI-unsplash.jpg');
-export const HERO_MENU = img('home-03.jpg');
+export const HERO_MENU = img('menuherobg.png');
 export const STORY_IMG = img('brooke-cagle-9fHMo1-5Io8-unsplash-2.jpg');
 export const ABOUT_V60 = img('bundo-kim-y6dGNZaDu4w-unsplash.jpg');
 export const NEWSLETTER_BG = img('coffee-bg.jpg');

@@ -7,6 +7,7 @@ const router = express.Router();
 const CATEGORIES = [
   { id: 'coffees-teas', name: 'Coffees & Teas', eyebrow: 'Best Drinks', sortOrder: 1 },
   { id: 'bakery-lunch', name: 'Bakery & Lunch', eyebrow: 'Delicious Food', sortOrder: 2 },
+  { id: 'all-day-brunch', name: 'All-Day Brunch', eyebrow: 'We Also Have', sortOrder: 3 },
 ];
 
 // GET /api/menu -> categories with their available items, nested

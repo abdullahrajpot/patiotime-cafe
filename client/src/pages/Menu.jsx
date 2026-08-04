@@ -15,15 +15,17 @@ function BrunchCard({ item, onAdd }) {
   };
   return (
     <article className="brunch-card">
-      <img src={menuItemImg(item.image)} alt={item.name} loading="lazy" />
+      <div style={{ position: 'relative' }}>
+        <img src={menuItemImg(item.image)} alt={item.name} loading="lazy" />
+        <button type="button" className="btn btn-solid" onClick={handleAdd}>
+          {added ? 'Added ✓' : 'Add to Cart'}
+        </button>
+      </div>
       <div className="brunch-card-top">
         <h4>{item.name}</h4>
         <span className="price">${item.price.toFixed(2)}</span>
       </div>
       <p>{item.description}</p>
-      <button type="button" className="btn btn-outline" style={{ width: '100%', padding: '12px' }} onClick={handleAdd}>
-        {added ? 'Added ✓' : 'Add to Cart'}
-      </button>
     </article>
   );
 }

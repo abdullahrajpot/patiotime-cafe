@@ -1,7 +1,7 @@
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 
-const OVERLAY_PATHS = ['/', '/about', '/menu'];
+const OVERLAY_PATHS = ['/', '/about', '/menu', '/reservation', '/contact'];
 
 export default function Navbar() {
   const { count } = useCart();
@@ -19,9 +19,8 @@ export default function Navbar() {
           <li><NavLink to="/" end>Home</NavLink></li>
           <li><NavLink to="/about">About</NavLink></li>
           <li><NavLink to="/menu">Our Menu</NavLink></li>
-          <li><NavLink to="/menu">Reservation</NavLink></li>
-          <li><a href="/#contact">Contact</a></li>
-          <li><a href="/#news">News</a></li>
+          <li><NavLink to="/reservation">Reservation</NavLink></li>
+          <li><NavLink to="/contact">Contact</NavLink></li>
         </ul>
 
         <div className="nav-actions">
@@ -34,7 +33,7 @@ export default function Navbar() {
             </svg>
             {count > 0 && <span className="cart-count">{count}</span>}
           </Link>
-          <Link to="/menu" className="btn btn-ghost">Reservation</Link>
+          <Link to="/reservation" className="btn btn-ghost">Reservation</Link>
         </div>
       </div>
     </nav>
