@@ -6,8 +6,12 @@ const Order = require('../models/Order');
 const MenuItem = require('../models/MenuItem');
 const Reservation = require('../models/Reservation');
 const Contact = require('../models/Contact');
+const { requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
+
+// Apply admin authentication to ALL routes in this file
+router.use(requireAdmin);
 
 const STATUSES = ['received', 'preparing', 'ready', 'completed', 'cancelled'];
 

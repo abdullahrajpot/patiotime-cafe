@@ -26,28 +26,41 @@ export function trackOrder(code) {
   return fetch(`${BASE}/orders/track/${encodeURIComponent(code)}`).then(handle);
 }
 
+// Helper to get auth headers
+function getAuthHeaders() {
+  const token = localStorage.getItem('token');
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': token ? `Bearer ${token}` : ''
+  };
+}
+
 export function getAdminOrders(status) {
   const qs = status && status !== 'all' ? `?status=${status}` : '';
-  return fetch(`${BASE}/admin/orders${qs}`).then(handle);
+  return fetch(`${BASE}/admin/orders${qs}`, {
+    headers: getAuthHeaders()
+  }).then(handle);
 }
 
 export function updateOrderStatus(id, status) {
   return fetch(`${BASE}/admin/orders/${id}/status`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify({ status }),
   }).then(handle);
 }
 
 // Admin Menu Management APIs
 export function getAdminMenu() {
-  return fetch(`${BASE}/admin/menu`).then(handle);
+  return fetch(`${BASE}/admin/menu`, {
+    headers: getAuthHeaders()
+  }).then(handle);
 }
 
 export function createMenuItem(payload) {
   return fetch(`${BASE}/admin/menu`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify(payload),
   }).then(handle);
 }
@@ -55,7 +68,7 @@ export function createMenuItem(payload) {
 export function updateMenuItem(id, payload) {
   return fetch(`${BASE}/admin/menu/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify(payload),
   }).then(handle);
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   getAdminOrders, 
   updateOrderStatus, 
@@ -772,8 +773,88 @@ function ContactsTab() {
 
 // Main Admin Component with Sidebar
 export default function Admin() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
+
+  // Check if user is admin
+  useEffect(() => {
+    const checkAdminAccess = () => {
+      const userData = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
+
+      if (!userData || !token) {
+        // Not logged in
+        setAccessDenied(true);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const user = JSON.parse(userData);
+        
+        if (user.role !== 'admin') {
+          // Not an admin
+          setAccessDenied(true);
+          setLoading(false);
+          return;
+        }
+
+        // User is admin
+        setAccessDenied(false);
+        setLoading(false);
+      } catch (err) {
+        console.error('Error checking admin access:', err);
+        setAccessDenied(true);
+        setLoading(false);
+      }
+    };
+
+    checkAdminAccess();
+  }, []);
+
+  // Show loading
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f5f3ef' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>⏳</div>
+          <div style={{ fontSize: 18, color: 'var(--muted)' }}>Checking access...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show access denied
+  if (accessDenied) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f5f3ef' }}>
+        <div style={{ textAlign: 'center', maxWidth: 500, padding: 40 }}>
+          <div style={{ fontSize: 64, marginBottom: 24 }}>🔒</div>
+          <h2 style={{ fontSize: 32, marginBottom: 16, color: 'var(--text)' }}>Access Denied</h2>
+          <p style={{ fontSize: 16, color: 'var(--muted)', marginBottom: 32, lineHeight: 1.6 }}>
+            You need administrator privileges to access this page. Please login with an admin account.
+          </p>
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => navigate('/login')}
+              className="btn btn-solid"
+            >
+              Login
+            </button>
+            <button
+              onClick={() => navigate('/')}
+              className="btn btn-outline"
+            >
+              Go to Home
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-layout">
