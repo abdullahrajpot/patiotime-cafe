@@ -13,11 +13,29 @@ export default function Navbar() {
 
   useEffect(() => {
     // Check if user is logged in
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-  }, []);
+    const checkUser = () => {
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        setUser(JSON.parse(userData));
+      } else {
+        setUser(null);
+      }
+    };
+
+    // Check on mount
+    checkUser();
+
+    // Listen for storage changes (logout/login in other tabs)
+    window.addEventListener('storage', checkUser);
+
+    // Listen for custom event (for same-tab updates)
+    window.addEventListener('auth-change', checkUser);
+
+    return () => {
+      window.removeEventListener('storage', checkUser);
+      window.removeEventListener('auth-change', checkUser);
+    };
+  }, [pathname]); // Re-check on route change
 
   const closeMobileMenu = () => {
     setMobileMenuOpen(false);
@@ -27,7 +45,12 @@ export default function Navbar() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
-    window.location.reload();
+    
+    // Dispatch custom event
+    window.dispatchEvent(new Event('auth-change'));
+    
+    // Force reload to clear all state
+    window.location.href = '/';
   };
 
   return (

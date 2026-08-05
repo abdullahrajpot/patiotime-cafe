@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { trackOrder } from '../api';
+import { useSearchParams, Link } from 'react-router-dom';
+import { trackOrder, getUserOrderHistory } from '../api';
 
 const STEPS = ['received', 'preparing', 'ready', 'completed'];
 const STEP_LABELS = { received: 'Received', preparing: 'Preparing', ready: 'Ready', completed: 'Completed' };
@@ -11,6 +11,31 @@ export default function Track() {
   const [order, setOrder] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(null);
+  const [orderHistory, setOrderHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  useEffect(() => {
+    // Check if user is logged in
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      const parsedUser = JSON.parse(userData);
+      setUser(parsedUser);
+      loadOrderHistory(parsedUser._id);
+    }
+  }, []);
+
+  const loadOrderHistory = async (userId) => {
+    setHistoryLoading(true);
+    try {
+      const history = await getUserOrderHistory(userId);
+      setOrderHistory(history);
+    } catch (err) {
+      console.error('Failed to load order history:', err);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
 
   const runTrack = async (c) => {
     if (!c) return;
@@ -41,6 +66,12 @@ export default function Track() {
   const handleSubmit = (e) => {
     e.preventDefault();
     runTrack(code.trim());
+  };
+
+  const handleTrackHistory = (orderCode) => {
+    setCode(orderCode);
+    runTrack(orderCode);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -110,6 +141,87 @@ export default function Track() {
               <div className="summary-row total"><span>Total</span><span>${order.total.toFixed(2)}</span></div>
             </div>
           </>
+        )}
+
+        {/* Order History Section */}
+        {user && (
+          <div style={{ marginTop: 40 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h3 style={{ fontSize: 24, margin: 0 }}>Your Order History</h3>
+              {orderHistory.length > 0 && (
+                <span style={{ color: 'var(--muted)', fontSize: 14 }}>
+                  {orderHistory.length} {orderHistory.length === 1 ? 'order' : 'orders'}
+                </span>
+              )}
+            </div>
+
+            {historyLoading ? (
+              <p style={{ textAlign: 'center', color: 'var(--muted)' }}>Loading your orders...</p>
+            ) : orderHistory.length === 0 ? (
+              <div className="card" style={{ textAlign: 'center', padding: '40px 20px' }}>
+                <p style={{ color: 'var(--muted)', marginBottom: 16 }}>You haven't placed any orders yet.</p>
+                <Link to="/menu" className="btn btn-solid">Browse Menu</Link>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {orderHistory.map((historyOrder) => (
+                  <div className="card" key={historyOrder.id} style={{ cursor: 'pointer' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                      <div>
+                        <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 600, marginBottom: 4 }}>
+                          {historyOrder.order_code}
+                        </div>
+                        <div style={{ fontSize: 13, color: 'var(--muted)' }}>
+                          {new Date(historyOrder.created_at).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      </div>
+                      <span className={`badge-status badge-${historyOrder.status}`}>
+                        {historyOrder.status}
+                      </span>
+                    </div>
+
+                    <div style={{ fontSize: 14, color: 'var(--text)', marginBottom: 8 }}>
+                      {historyOrder.items.length} {historyOrder.items.length === 1 ? 'item' : 'items'} • 
+                      {historyOrder.order_type === 'delivery' ? ' Delivery' : ' Pickup'}
+                    </div>
+
+                    <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 12 }}>
+                      {historyOrder.items.slice(0, 2).map(item => item.name).join(', ')}
+                      {historyOrder.items.length > 2 && ` +${historyOrder.items.length - 2} more`}
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12, borderTop: '1px solid var(--line)' }}>
+                      <div style={{ fontWeight: 600, fontSize: 16 }}>
+                        ${historyOrder.total.toFixed(2)}
+                      </div>
+                      <button
+                        onClick={() => handleTrackHistory(historyOrder.order_code)}
+                        className="btn btn-outline"
+                        style={{ padding: '8px 20px', fontSize: 11 }}
+                      >
+                        Track Order
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Guest Message */}
+        {!user && !order && !loading && (
+          <div className="card" style={{ textAlign: 'center', padding: '30px 20px', marginTop: 20 }}>
+            <p style={{ color: 'var(--muted)', marginBottom: 16 }}>
+              <Link to="/login" style={{ color: 'var(--gold)', fontWeight: 500 }}>Login</Link> to view your order history and track all your orders in one place.
+            </p>
+          </div>
         )}
       </div>
     </>

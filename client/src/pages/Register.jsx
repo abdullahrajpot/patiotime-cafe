@@ -44,9 +44,11 @@ export default function Register() {
       localStorage.setItem('token', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
       
+      // Dispatch auth change event
+      window.dispatchEvent(new Event('auth-change'));
+      
       // Redirect to home page
       navigate('/');
-      window.location.reload(); // Refresh to update nav
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');
     } finally {

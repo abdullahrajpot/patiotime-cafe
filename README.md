@@ -1,301 +1,482 @@
-# PatioTime Cafe - MERN Stack Online Ordering System
+# ☕ PatioTime Cafe - Full Stack MERN Application
 
-A full-featured cafe/restaurant online ordering system built with the MERN stack, featuring customer ordering (menu, cart, checkout, order tracking) and an admin order management board.
+A modern, full-featured cafe website with online ordering, reservations, and admin management system.
 
-## 🎨 Design
+![PatioTime Cafe](https://img.shields.io/badge/Stack-MERN-green) ![License](https://img.shields.io/badge/License-MIT-blue)
 
-This project is a pixel-perfect clone of the PatioTime Cafe demo, matching:
-- Exact typography (Playfair Display & Jost fonts)
-- Color scheme and spacing
-- Layout and component structure
-- All sections and interactions
+---
 
-## 📋 Features
+## 🌟 Features
 
 ### Customer Features
-- **Home Page**: Hero section, menu preview, brunch carousel, Instagram grid, our story, latest news, newsletter signup
-- **About Page**: Company story with image gallery
-- **Menu Page**: Full menu with categories (Coffees & Teas, Bakery & Lunch, All-Day Brunch)
-- **Shopping Cart**: Add/remove items, adjust quantities, view totals
-- **Checkout**: Order type selection (pickup/delivery), customer information form
-- **Order Tracking**: Real-time order status tracking with order code
+- 🏠 **Beautiful Homepage** - Hero section, brunch carousel, latest news
+- 🍽️ **Dynamic Menu** - Browse menu items by category with images
+- 🛒 **Shopping Cart** - Add items, adjust quantities, checkout
+- 📦 **Order Tracking** - Track order status in real-time
+- 📅 **Reservations** - Book tables online
+- 📞 **Contact Form** - Send inquiries directly
+- 👤 **User Authentication** - Register, login, profile management
+- 📱 **Fully Responsive** - Works on all devices
 
 ### Admin Features
-- **Order Board**: Live dashboard showing all orders
-- **Status Management**: Update order status (received → preparing → ready → completed)
-- **Filter Orders**: View by status (all, received, preparing, ready, completed, cancelled)
-- **Auto-refresh**: Dashboard updates every 5 seconds
+- 📊 **Dashboard** - View stats, orders, revenue at a glance
+- 📦 **Order Management** - View and update order statuses
+- 🍔 **Menu Management** - Full CRUD for menu items
+- 🖼️ **Image Upload** - Upload menu item images
+- 📅 **Reservations Management** - View and manage reservations
+- 📧 **Contact Management** - View and respond to inquiries
+- 📱 **Mobile Admin Panel** - Manage on any device
+
+### Technical Features
+- ⚡ **Fast Performance** - Vite for lightning-fast development
+- 🔒 **Secure** - JWT authentication, password hashing
+- 🎨 **Professional Design** - Custom styled with CSS
+- 📊 **Real-time Updates** - Auto-refresh order status
+- ♾️ **Infinite Carousel** - Smooth scrolling brunch items
+- 🔍 **SEO Friendly** - Proper meta tags and structure
+
+---
 
 ## 🛠️ Tech Stack
 
-**Frontend:**
-- React 19 with Vite
-- React Router for navigation
-- Context API for cart management
-- CSS with custom properties
+### Frontend
+- **React** 18+ - UI library
+- **Vite** - Build tool and dev server
+- **React Router** - Client-side routing
+- **Context API** - State management (Cart)
+- **CSS3** - Custom styling with variables
 
-**Backend:**
-- Node.js with Express
-- MongoDB with Mongoose
-- RESTful API architecture
-- CORS enabled
+### Backend
+- **Node.js** - Runtime environment
+- **Express.js** - Web framework
+- **MongoDB** - NoSQL database
+- **Mongoose** - ODM for MongoDB
+- **JWT** - Authentication
+- **bcryptjs** - Password hashing
+- **Multer** - File upload handling
+
+---
 
 ## 📁 Project Structure
 
 ```
 mern-cafe/
-├── client/                  # React frontend
-│   ├── public/
-│   │   └── images/         # All product and UI images
+├── client/                # Frontend React app
+│   ├── public/           # Static assets
+│   │   └── images/       # Uploaded images
 │   ├── src/
-│   │   ├── components/     # Reusable components
-│   │   ├── context/        # Cart context
-│   │   ├── layouts/        # Page layouts
-│   │   ├── pages/          # Route pages
-│   │   ├── utils/          # Utilities (images.js)
-│   │   ├── api.js          # API client
-│   │   ├── App.jsx         # Main app component
-│   │   └── index.css       # Global styles
-│   └── vite.config.js      # Vite configuration
-├── server/                  # Express backend
-│   ├── models/             # Mongoose models
-│   ├── routes/             # API routes
-│   ├── seed.js             # Database seeding script
-│   └── server.js           # Express server
-└── README.md
+│   │   ├── components/   # React components
+│   │   ├── context/      # Context providers (Cart)
+│   │   ├── layouts/      # Layout components
+│   │   ├── pages/        # Page components
+│   │   ├── utils/        # Utilities (images.js)
+│   │   ├── api.js        # API calls
+│   │   ├── App.jsx       # Main app component
+│   │   ├── main.jsx      # Entry point
+│   │   └── index.css     # Global styles
+│   ├── package.json
+│   └── vite.config.js
+│
+├── server/               # Backend Express API
+│   ├── models/          # Mongoose models
+│   │   ├── MenuItem.js
+│   │   ├── Order.js
+│   │   ├── User.js
+│   │   ├── Reservation.js
+│   │   └── Contact.js
+│   ├── routes/          # API routes
+│   │   ├── menu.js
+│   │   ├── orders.js
+│   │   ├── admin.js
+│   │   ├── auth.js
+│   │   ├── reservations.js
+│   │   └── contact.js
+│   ├── server.js        # Server entry point
+│   ├── seed.js          # Database seeding
+│   ├── package.json
+│   └── .env             # Environment variables
+│
+└── Documentation/        # Project docs
+    ├── DEPLOYMENT-GUIDE.md
+    ├── DEPLOYMENT-CHECKLIST.md
+    ├── AUTH-SYSTEM.md
+    └── ORDER-HISTORY-UPDATE.md
 ```
 
-## 🚀 Getting Started
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js (v16 or higher)
-- MongoDB (local or MongoDB Atlas)
+- Node.js (v18+)
+- MongoDB (local or Atlas)
 - npm or yarn
 
-### Installation
-
-1. **Clone the repository**
+### 1. Clone Repository
 ```bash
-cd "c:\Users\Sabri laptop\Downloads\patiotime-mern-app\mern-cafe"
+git clone https://github.com/YOUR_USERNAME/patiotime-cafe.git
+cd patiotime-cafe
 ```
 
-2. **Install server dependencies**
+### 2. Setup Backend
 ```bash
 cd server
 npm install
-```
 
-3. **Install client dependencies**
-```bash
-cd ../client
-npm install
-```
+# Create .env file
+cp .env.example .env
 
-4. **Configure environment variables**
-
-Create a `.env` file in the `server` directory:
-
-```env
-PORT=5000
-MONGO_URI=mongodb://127.0.0.1:27017/patiotime
-```
-
-For MongoDB Atlas, use:
-```env
-MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/patiotime
-```
-
-5. **Start MongoDB**
-
-If using local MongoDB:
-```bash
-# Windows - run MongoDB service
-net start MongoDB
-
-# Or if installed manually, start mongod
-mongod
-```
-
-6. **Seed the database**
-```bash
-cd server
-npm run seed
-```
-
-You should see:
-```
-Connected to MongoDB for seeding: mongodb://127.0.0.1:27017/patiotime
-Seed complete: 3 categories, 18 menu items.
-```
-
-### Running the Application
-
-You need to run both the backend and frontend servers:
-
-**Terminal 1 - Start Backend Server:**
-```bash
-cd server
+# Edit .env with your MongoDB URI and JWT secret
+# Then start server
 npm run dev
 ```
 
-Backend will run on `http://localhost:5000`
+Server runs on: `http://localhost:5000`
 
-**Terminal 2 - Start Frontend Dev Server:**
+### 3. Setup Frontend
 ```bash
 cd client
+npm install
+
+# Create .env file (optional for local dev)
+cp .env.example .env
+
+# Start development server
 npm run dev
 ```
 
-Frontend will run on `http://localhost:5173`
+Frontend runs on: `http://localhost:5173`
 
-Open your browser and visit `http://localhost:5173`
+### 4. Seed Database (Optional)
+```bash
+cd server
+node seed.js
+```
 
-## 📱 Application Routes
+---
 
-### Public Routes
-- `/` - Home page
-- `/about` - About us page
-- `/menu` - Full menu with ordering
-- `/cart` - Shopping cart
-- `/checkout` - Checkout form
-- `/track` - Order tracking (with order code)
+## 🌐 Deployment
 
-### Admin Route
-- `/admin` - Order management dashboard
+### Quick Deploy
+1. **Database**: MongoDB Atlas (Free tier)
+2. **Backend**: Render (Free tier)
+3. **Frontend**: Vercel (Free tier)
 
-## 🔌 API Endpoints
+### Step-by-Step Guide
+See detailed instructions in:
+- 📄 **[DEPLOYMENT-GUIDE.md](./DEPLOYMENT-GUIDE.md)** - Complete deployment tutorial
+- ✅ **[DEPLOYMENT-CHECKLIST.md](./DEPLOYMENT-CHECKLIST.md)** - Quick checklist
 
-### Menu
-- `GET /api/menu` - Get all categories with menu items
+### Live URLs (After Deployment)
+- Frontend: `https://your-app.vercel.app`
+- Backend API: `https://your-backend.onrender.com`
+- Admin Panel: `https://your-app.vercel.app/admin`
 
-### Orders
-- `POST /api/orders` - Create new order
-- `GET /api/orders/track/:code` - Track order by code
+---
 
-### Admin
-- `GET /api/admin/orders?status=all` - Get orders (filter by status)
-- `PATCH /api/admin/orders/:id/status` - Update order status
+## 📚 API Documentation
+
+### Public Endpoints
+
+#### Menu
+```
+GET    /api/menu              - Get all menu items
+GET    /api/menu?category=x   - Get items by category
+```
+
+#### Orders
+```
+POST   /api/orders            - Create new order
+GET    /api/orders/track/:code - Track order by code
+GET    /api/orders/history/:userId - Get user order history
+```
+
+#### Reservations
+```
+POST   /api/reservations      - Create reservation
+```
+
+#### Contact
+```
+POST   /api/contact           - Submit contact form
+```
+
+#### Authentication
+```
+POST   /api/auth/register     - Register new user
+POST   /api/auth/login        - Login user
+GET    /api/auth/me           - Get current user (protected)
+PUT    /api/auth/me           - Update profile (protected)
+```
+
+### Admin Endpoints (Protected)
+
+#### Orders Management
+```
+GET    /api/admin/orders      - Get all orders
+GET    /api/admin/orders?status=received - Filter by status
+PATCH  /api/admin/orders/:id/status - Update order status
+```
+
+#### Menu Management
+```
+GET    /api/admin/menu        - Get all menu items
+POST   /api/admin/menu        - Create menu item
+PUT    /api/admin/menu/:id    - Update menu item
+DELETE /api/admin/menu/:id    - Delete menu item
+POST   /api/admin/upload      - Upload image
+```
+
+#### Reservations Management
+```
+GET    /api/admin/reservations - Get all reservations
+PATCH  /api/admin/reservations/:id/status - Update status
+DELETE /api/admin/reservations/:id - Delete reservation
+```
+
+#### Contacts Management
+```
+GET    /api/admin/contacts    - Get all contacts
+PATCH  /api/admin/contacts/:id/status - Update status
+DELETE /api/admin/contacts/:id - Delete contact
+```
+
+---
 
 ## 🎨 Design System
 
 ### Colors
-- Primary Gold: `#c5a059`
-- Dark Black: `#111111`
-- Text: `#1b1815`
-- Muted: `#8c887f`
-- Background: `#ffffff`
+```css
+--gold: #c5a059        /* Primary brand color */
+--gold-light: #d4b06a  /* Hover states */
+--gold-dark: #a88947   /* Active states */
+--black: #111111       /* Headers, navbar */
+--dark: #0f0e0c        /* Dark backgrounds */
+--text: #1b1815        /* Body text */
+--muted: #8c887f       /* Secondary text */
+```
 
 ### Typography
-- Headings: Playfair Display (serif)
-- Body: Jost (sans-serif)
+- **Headers**: Playfair Display (serif)
+- **Body**: Jost (sans-serif)
 
-### Layout
-- Max Container Width: 1200px
-- Section Padding: 100px vertical
-- Navigation Height: 80px
-
-## 📦 Database Models
-
-### Category
-- name (String)
-- eyebrow (String)
-- sortOrder (Number)
-
-### MenuItem
-- category (ObjectId)
-- name (String)
-- description (String)
-- price (Number)
-- badge (String, optional)
-- image (String)
-- sortOrder (Number)
-
-### Order
-- order_code (String, auto-generated)
-- customer_name (String)
-- customer_phone (String)
-- customer_email (String)
-- order_type (enum: pickup/delivery)
-- address (String)
-- items (Array)
-- subtotal (Number)
-- tax (Number)
-- total (Number)
-- status (enum: received/preparing/ready/completed/cancelled)
-- notes (String)
-- created_at (Date)
-
-## 🧪 Testing the Application
-
-1. **Browse Menu**: Visit home page and menu page
-2. **Add to Cart**: Click + buttons on menu items
-3. **View Cart**: Check cart badge and visit cart page
-4. **Checkout**: Fill in customer details and place order
-5. **Track Order**: Use the order code to track status
-6. **Admin Dashboard**: Visit `/admin` to manage orders
-
-## 🛠️ Development Commands
-
-### Client
-```bash
-npm run dev      # Start dev server
-npm run build    # Build for production
-npm run preview  # Preview production build
-npm run lint     # Run oxlint
+### Breakpoints
+```css
+1024px  /* Tablets */
+900px   /* Large mobile */
+600px   /* Mobile */
+400px   /* Small mobile */
 ```
-
-### Server
-```bash
-npm start        # Start production server
-npm run dev      # Start with nodemon (auto-reload)
-npm run seed     # Seed database
-```
-
-## 🐛 Troubleshooting
-
-**MongoDB Connection Issues:**
-- Ensure MongoDB is running
-- Check MONGO_URI in .env file
-- Verify MongoDB port (default: 27017)
-
-**Port Already in Use:**
-- Change PORT in server/.env
-- Update proxy in client/vite.config.js
-
-**Images Not Loading:**
-- Verify images exist in client/public/images/
-- Check browser console for 404 errors
-
-**API Errors:**
-- Check server terminal for error messages
-- Verify backend is running on port 5000
-- Check CORS configuration
-
-## 📄 License
-
-This project is for educational purposes.
-
-## 👨‍💻 Development Notes
-
-- Cart state is managed with React Context API
-- Cart data persists in localStorage
-- Order codes are auto-generated (format: PT-XXXXXX)
-- Tax rate is set to 8% (configurable in CartContext.jsx)
-- Admin dashboard auto-refreshes every 5 seconds
-- All images are served from public/images directory
-
-## 🎯 Project Requirements Completed
-
-✅ Customer ordering system (menu, cart, checkout, tracking)
-✅ Admin order management board
-✅ RESTful API with MongoDB database
-✅ Responsive design matching reference site
-✅ Real-time order status updates
-✅ Pickup and delivery order types
-✅ Cart with localStorage persistence
-✅ Order code generation and tracking
-✅ Complete MERN stack implementation
 
 ---
 
-**Built with ❤️ using the MERN stack**
+## 🗂️ Database Schema
+
+### User
+```javascript
+{
+  name: String,
+  email: String (unique),
+  password: String (hashed),
+  phone: String,
+  address: String,
+  role: String (customer/admin),
+  createdAt: Date
+}
+```
+
+### MenuItem
+```javascript
+{
+  name: String,
+  description: String,
+  price: Number,
+  category: String,
+  image: String,
+  isAvailable: Boolean,
+  badges: [String]
+}
+```
+
+### Order
+```javascript
+{
+  orderCode: String (unique),
+  user: ObjectId (ref: User),
+  customerName: String,
+  customerPhone: String,
+  customerEmail: String,
+  orderType: String (pickup/delivery),
+  address: String,
+  items: [{
+    menuItem: ObjectId,
+    name: String,
+    price: Number,
+    quantity: Number
+  }],
+  subtotal: Number,
+  tax: Number,
+  total: Number,
+  status: String,
+  createdAt: Date
+}
+```
+
+### Reservation
+```javascript
+{
+  name: String,
+  email: String,
+  phone: String,
+  date: Date,
+  time: String,
+  guests: Number,
+  message: String,
+  status: String,
+  createdAt: Date
+}
+```
+
+### Contact
+```javascript
+{
+  name: String,
+  email: String,
+  subject: String,
+  message: String,
+  status: String,
+  createdAt: Date
+}
+```
+
+---
+
+## 🔐 Environment Variables
+
+### Backend (.env)
+```bash
+NODE_ENV=development
+PORT=5000
+MONGO_URI=mongodb://localhost:27017/patiotime
+JWT_SECRET=your-secret-key
+CLIENT_URL=http://localhost:3000
+```
+
+### Frontend (.env)
+```bash
+VITE_API_URL=http://localhost:5000/api
+```
+
+---
+
+## 🧪 Testing
+
+### Test Locally
+```bash
+# Backend
+cd server
+npm run dev
+
+# Frontend
+cd client
+npm run dev
+```
+
+### Test Production Build
+```bash
+cd client
+npm run build
+npm run preview
+```
+
+---
+
+## 📦 Available Scripts
+
+### Backend
+```bash
+npm start      # Start production server
+npm run dev    # Start development server with nodemon
+npm run seed   # Seed database with sample data
+```
+
+### Frontend
+```bash
+npm run dev      # Start development server
+npm run build    # Build for production
+npm run preview  # Preview production build
+```
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
+
+---
+
+## 📝 License
+
+This project is licensed under the MIT License.
+
+---
+
+## 👥 Authors
+
+- **Your Name** - Initial work
+
+---
+
+## 🙏 Acknowledgments
+
+- Design inspiration from modern cafe websites
+- Icons from Heroicons
+- Fonts from Google Fonts
+
+---
+
+## 📞 Support
+
+For issues and questions:
+- 📧 Email: support@patiotimecafe.com
+- 🐛 Issues: GitHub Issues
+- 📖 Docs: See documentation folder
+
+---
+
+## 🔄 Changelog
+
+### Version 1.0.0 (2025-02-01)
+- ✅ Initial release
+- ✅ Full MERN stack implementation
+- ✅ User authentication system
+- ✅ Order management system
+- ✅ Reservation system
+- ✅ Admin panel
+- ✅ Responsive design
+- ✅ Professional dashboard with SVG icons
+- ✅ Order history tracking
+
+---
+
+## 🚧 Roadmap
+
+### Planned Features
+- [ ] Email notifications for orders
+- [ ] SMS order updates
+- [ ] Loyalty points system
+- [ ] User profile page with order history
+- [ ] Reorder from past orders
+- [ ] Favorite menu items
+- [ ] Reviews and ratings
+- [ ] Multiple language support
+- [ ] Dark mode
+- [ ] Payment integration (Stripe)
+
+---
+
+**Made with ☕ and ❤️**
