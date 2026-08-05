@@ -17,6 +17,7 @@ const app = express();
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
+  'https://patiotime-cafe.vercel.app', // Your Vercel frontend
   process.env.CLIENT_URL
 ].filter(Boolean);
 
@@ -28,6 +29,7 @@ const corsOptions = {
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
+      console.log('CORS blocked origin:', origin); // Debug log
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -57,15 +59,28 @@ app.get('/api/health', (req, res) => res.json({
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/patiotime';
 
+// Mongoose connection options (compatible with older Node.js versions)
+const mongooseOptions = {
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+};
+
 mongoose
-  .connect(MONGO_URI)
+  .connect(MONGO_URI, mongooseOptions)
   .then(() => {
     // Hide credentials in logs
     const safeUri = MONGO_URI.replace(/\/\/[^:]+:[^@]+@/, '//***:***@');
     console.log('✅ MongoDB connected:', safeUri);
-    app.listen(PORT, () => console.log(`✅ API server running on port ${PORT}`));
+    console.log('✅ Node version:', process.version);
+    app.listen(PORT, () => {
+      console.log(`✅ API server running on port ${PORT}`);
+      console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
   })
   .catch((err) => {
     console.error('❌ MongoDB connection failed:', err.message);
+    console.error('❌ Full error:', err);
+    console.error('❌ Node version:', process.version);
+    console.error('❌ Mongoose version:', mongoose.version);
     process.exit(1);
   });
