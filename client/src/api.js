@@ -10,6 +10,10 @@ export function getMenu() {
   return fetch(`${BASE}/menu`).then(handle);
 }
 
+export function getMenuByCategory(category) {
+  return fetch(`${BASE}/menu?category=${encodeURIComponent(category)}`).then(handle);
+}
+
 export function createOrder(payload) {
   return fetch(`${BASE}/orders`, {
     method: 'POST',
@@ -120,4 +124,48 @@ export function deleteContact(id) {
   return fetch(`${BASE}/admin/contacts/${id}`, {
     method: 'DELETE',
   }).then(handle);
+}
+
+// Auth APIs
+export function register(payload) {
+  return fetch(`${BASE}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).then(handle);
+}
+
+export function login(payload) {
+  return fetch(`${BASE}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).then(handle);
+}
+
+export function getCurrentUser() {
+  const token = localStorage.getItem('token');
+  if (!token) return Promise.reject(new Error('Not authenticated'));
+  
+  return fetch(`${BASE}/auth/me`, {
+    headers: { 'Authorization': `Bearer ${token}` },
+  }).then(handle);
+}
+
+export function updateProfile(payload) {
+  const token = localStorage.getItem('token');
+  if (!token) return Promise.reject(new Error('Not authenticated'));
+  
+  return fetch(`${BASE}/auth/me`, {
+    method: 'PUT',
+    headers: { 
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(payload),
+  }).then(handle);
+}
+
+export function getUserOrderHistory(userId) {
+  return fetch(`${BASE}/orders/history/${userId}`).then(handle);
 }

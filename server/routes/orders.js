@@ -15,7 +15,7 @@ function genOrderCode() {
 // POST /api/orders -> create an order (checkout)
 router.post('/', async (req, res) => {
   try {
-    const { customer_name, customer_phone, customer_email, order_type, address, notes, items } = req.body;
+    const { customer_name, customer_phone, customer_email, order_type, address, notes, items, user_id } = req.body;
 
     if (!customer_name || !customer_phone) {
       return res.status(400).json({ error: 'Name and phone are required.' });
@@ -57,6 +57,7 @@ router.post('/', async (req, res) => {
       try {
         order = await Order.create({
           orderCode,
+          user: user_id || null, // Save logged-in user ID
           customerName: customer_name,
           customerPhone: customer_phone,
           customerEmail: customer_email || null,
@@ -112,6 +113,35 @@ router.get('/track/:code', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to look up order.' });
+  }
+});
+
+// GET /api/orders/history/:userId -> get user order history
+router.get('/history/:userId', async (req, res) => {
+  try {
+    const orders = await Order.find({ user: req.params.userId })
+      .sort({ createdAt: -1 }) // Most recent first
+      .lean();
+
+    const formattedOrders = orders.map(order => ({
+      id: order._id,
+      order_code: order.orderCode,
+      customer_name: order.customerName,
+      customer_phone: order.customerPhone,
+      order_type: order.orderType,
+      address: order.address,
+      items: order.items,
+      subtotal: order.subtotal,
+      tax: order.tax,
+      total: order.total,
+      status: order.status,
+      created_at: order.createdAt,
+    }));
+
+    res.json(formattedOrders);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch order history.' });
   }
 });
 

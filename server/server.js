@@ -9,6 +9,7 @@ const orderRoutes = require('./routes/orders');
 const adminRoutes = require('./routes/admin');
 const reservationRoutes = require('./routes/reservations');
 const contactRoutes = require('./routes/contact');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 app.use(cors());
@@ -22,6 +23,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/reservations', reservationRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/auth', authRoutes);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 

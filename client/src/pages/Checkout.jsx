@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { createOrder } from '../api';
@@ -11,6 +11,23 @@ export default function Checkout() {
   const [form, setForm] = useState({ customer_name: '', customer_phone: '', customer_email: '', address: '', notes: '' });
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    // Check if user is logged in and pre-fill form
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      const parsedUser = JSON.parse(userData);
+      setUser(parsedUser);
+      setForm({
+        customer_name: parsedUser.name || '',
+        customer_phone: parsedUser.phone || '',
+        customer_email: parsedUser.email || '',
+        address: parsedUser.address || '',
+        notes: ''
+      });
+    }
+  }, []);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -23,6 +40,7 @@ export default function Checkout() {
         ...form,
         order_type: orderType,
         items: cart.map((c) => ({ menu_item_id: c.menu_item_id, quantity: c.quantity })),
+        user_id: user?._id || null, // Include user ID if logged in
       };
       const data = await createOrder(payload);
       clearCart();

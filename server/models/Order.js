@@ -13,6 +13,7 @@ const orderItemSchema = new mongoose.Schema(
 const orderSchema = new mongoose.Schema(
   {
     orderCode: { type: String, required: true, unique: true },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }, // Link to logged-in user
     customerName: { type: String, required: true },
     customerPhone: { type: String, required: true },
     customerEmail: { type: String, default: null },

@@ -8,6 +8,8 @@ import Checkout from './pages/Checkout';
 import Track from './pages/Track';
 import Reservation from './pages/Reservation';
 import Contact from './pages/Contact';
+import Login from './pages/Login';
+import Register from './pages/Register';
 import Admin from './pages/Admin';
 
 export default function App() {
@@ -22,6 +24,8 @@ export default function App() {
         <Route path="/cart" element={<Cart />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/track" element={<Track />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
       </Route>
       <Route path="/admin" element={<Admin />} />
     </Routes>

@@ -60,12 +60,6 @@ export default function Home() {
 
       <BrunchCarousel />
 
-      <section className="section" style={{ paddingTop: 0 }}>
-        <div className="container menu-cta">
-          <Link to="/menu" className="btn btn-solid">View All Menu</Link>
-        </div>
-      </section>
-
       <InstagramGrid />
       <OurStory />
       <LatestNews />
