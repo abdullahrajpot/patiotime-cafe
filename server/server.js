@@ -96,6 +96,36 @@ app.use('/api/reservations', reservationRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/auth', authRoutes);
 
+// Debug endpoint to check routes
+app.get('/api/debug/routes', (req, res) => {
+  const routes = [];
+  app._router.stack.forEach((middleware) => {
+    if (middleware.route) {
+      routes.push({
+        path: middleware.route.path,
+        methods: Object.keys(middleware.route.methods)
+      });
+    } else if (middleware.name === 'router') {
+      middleware.handle.stack.forEach((handler) => {
+        if (handler.route) {
+          const path = middleware.regexp.source.replace('\\/?', '').replace('(?=\\/|$)', '');
+          routes.push({
+            path: path + handler.route.path,
+            methods: Object.keys(handler.route.methods)
+          });
+        }
+      });
+    }
+  });
+  res.json({
+    totalRoutes: routes.length,
+    routes: routes,
+    timestamp: new Date().toISOString(),
+    nodeVersion: process.version,
+    codeVersion: '2026-02-09-phase-1-8-complete'
+  });
+});
+
 app.get('/api/health', async (req, res) => {
   const healthCheck = {
     status: 'ok',
@@ -103,6 +133,7 @@ app.get('/api/health', async (req, res) => {
     uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development',
     version: require('./package.json').version || '1.0.0',
+    codeVersion: '2026-02-09-phase-1-8-complete',
     checks: {}
   };
 
