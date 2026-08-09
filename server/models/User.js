@@ -63,4 +63,18 @@ userSchema.methods.toJSON = function() {
   return obj;
 };
 
+// ========================================
+// INDEXES FOR PERFORMANCE OPTIMIZATION
+// ========================================
+
+// Unique index on email (already enforced by unique: true in schema)
+userSchema.index({ email: 1 }, { unique: true }); // Login lookup
+
+// Single field indexes
+userSchema.index({ role: 1 }); // Filter by role (admin vs customer)
+userSchema.index({ createdAt: -1 }); // Sort users by registration date
+
+// Compound indexes for common queries
+userSchema.index({ role: 1, createdAt: -1 }); // Filter + sort users
+
 module.exports = mongoose.model('User', userSchema);

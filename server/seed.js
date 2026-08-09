@@ -46,9 +46,24 @@ async function run() {
     console.log('✅ Old data cleared\n');
 
     console.log('Creating categories...');
-    const coffee = await Category.create({ name: 'Coffees & Teas', eyebrow: 'Best Drinks', sortOrder: 1 });
-    const bakery = await Category.create({ name: 'Bakery & Lunch', eyebrow: 'Delicious Food', sortOrder: 2 });
-    const brunch = await Category.create({ name: 'All-Day Brunch', eyebrow: 'We Also Have', sortOrder: 3 });
+    const coffee = await Category.create({ 
+      name: 'Coffees & Teas', 
+      eyebrow: 'Best Drinks', 
+      slug: 'coffees-teas',
+      sortOrder: 1 
+    });
+    const bakery = await Category.create({ 
+      name: 'Bakery & Lunch', 
+      eyebrow: 'Delicious Food', 
+      slug: 'bakery-lunch',
+      sortOrder: 2 
+    });
+    const brunch = await Category.create({ 
+      name: 'All-Day Brunch', 
+      eyebrow: 'We Also Have', 
+      slug: 'all-day-brunch',
+      sortOrder: 3 
+    });
     console.log('✅ Created 3 categories\n');
 
     const buildDocs = (catId, items) =>

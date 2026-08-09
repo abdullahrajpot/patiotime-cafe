@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { trackOrder, getUserOrderHistory } from '../api';
+import LoadingSpinner from '../components/LoadingSpinner';
+import ErrorMessage from '../components/ErrorMessage';
 
 const STEPS = ['received', 'preparing', 'ready', 'completed'];
 const STEP_LABELS = { received: 'Received', preparing: 'Preparing', ready: 'Ready', completed: 'Completed' };
@@ -97,8 +99,16 @@ export default function Track() {
           </form>
         </div>
 
-        {loading && <p style={{ textAlign: 'center', color: 'var(--muted)' }}>Looking up order…</p>}
-        {error && <div className="empty-state">{error}</div>}
+        {loading && (
+          <div style={{ marginTop: 20 }}>
+            <LoadingSpinner message="Looking up order..." />
+          </div>
+        )}
+        {error && (
+          <div style={{ marginTop: 20 }}>
+            <ErrorMessage message={error} type="error" />
+          </div>
+        )}
 
         {order && (
           <>
@@ -156,7 +166,9 @@ export default function Track() {
             </div>
 
             {historyLoading ? (
-              <p style={{ textAlign: 'center', color: 'var(--muted)' }}>Loading your orders...</p>
+              <div style={{ marginTop: 20 }}>
+                <LoadingSpinner message="Loading your orders..." />
+              </div>
             ) : orderHistory.length === 0 ? (
               <div className="card" style={{ textAlign: 'center', padding: '40px 20px' }}>
                 <p style={{ color: 'var(--muted)', marginBottom: 16 }}>You haven't placed any orders yet.</p>

@@ -87,7 +87,7 @@ export default function Contact() {
             </div>
 
             <div className="contact-image">
-              <img src={STORY_IMG} alt="Cafe interior" />
+              <img src={STORY_IMG} alt="Cafe interior" loading="lazy" />
             </div>
           </div>
         </div>

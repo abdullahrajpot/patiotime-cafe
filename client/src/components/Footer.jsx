@@ -17,8 +17,6 @@ export default function Footer() {
         <p className="footer-copy">© Copyright PatioTime WordPress Theme</p>
         <p className="footer-admin">
           <Link to="/track">Track Order</Link>
-          <span> · </span>
-          <Link to="/admin">Admin Board</Link>
         </p>
       </div>
     </footer>

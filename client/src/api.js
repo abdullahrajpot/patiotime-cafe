@@ -2,7 +2,10 @@ const BASE = import.meta.env.VITE_API_URL || '/api';
 
 async function handle(res) {
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+  if (!res.ok) {
+    const detailMsg = data.details?.map((d) => `${d.field}: ${d.message}`).join(', ');
+    throw new Error(detailMsg || data.error || 'Something went wrong.');
+  }
   return data;
 }
 
@@ -15,9 +18,18 @@ export function getMenuByCategory(category) {
 }
 
 export function createOrder(payload) {
+  // Get token from localStorage if user is logged in
+  const token = localStorage.getItem('token');
+  const headers = { 'Content-Type': 'application/json' };
+  
+  // Add Authorization header if user is authenticated
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   return fetch(`${BASE}/orders`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: headers,
     body: JSON.stringify(payload),
   }).then(handle);
 }
@@ -76,11 +88,21 @@ export function updateMenuItem(id, payload) {
 export function deleteMenuItem(id) {
   return fetch(`${BASE}/admin/menu/${id}`, {
     method: 'DELETE',
+    headers: getAuthHeaders()
   }).then(handle);
 }
 
 export function getCategories() {
-  return fetch(`${BASE}/admin/categories`).then(handle);
+  return fetch(`${BASE}/admin/categories`, {
+    headers: getAuthHeaders()
+  }).then(handle);
+}
+
+export function initCategories() {
+  return fetch(`${BASE}/admin/categories/init`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  }).then(handle);
 }
 
 // Reservation APIs
@@ -94,13 +116,15 @@ export function createReservation(payload) {
 
 export function getAdminReservations(status) {
   const qs = status && status !== 'all' ? `?status=${status}` : '';
-  return fetch(`${BASE}/admin/reservations${qs}`).then(handle);
+  return fetch(`${BASE}/admin/reservations${qs}`, {
+    headers: getAuthHeaders()
+  }).then(handle);
 }
 
 export function updateReservationStatus(id, status) {
   return fetch(`${BASE}/admin/reservations/${id}/status`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify({ status }),
   }).then(handle);
 }
@@ -108,6 +132,7 @@ export function updateReservationStatus(id, status) {
 export function deleteReservation(id) {
   return fetch(`${BASE}/admin/reservations/${id}`, {
     method: 'DELETE',
+    headers: getAuthHeaders()
   }).then(handle);
 }
 
@@ -122,13 +147,15 @@ export function submitContact(payload) {
 
 export function getAdminContacts(status) {
   const qs = status && status !== 'all' ? `?status=${status}` : '';
-  return fetch(`${BASE}/admin/contacts${qs}`).then(handle);
+  return fetch(`${BASE}/admin/contacts${qs}`, {
+    headers: getAuthHeaders()
+  }).then(handle);
 }
 
 export function updateContactStatus(id, status) {
   return fetch(`${BASE}/admin/contacts/${id}/status`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify({ status }),
   }).then(handle);
 }
@@ -136,6 +163,7 @@ export function updateContactStatus(id, status) {
 export function deleteContact(id) {
   return fetch(`${BASE}/admin/contacts/${id}`, {
     method: 'DELETE',
+    headers: getAuthHeaders()
   }).then(handle);
 }
 
@@ -179,6 +207,13 @@ export function updateProfile(payload) {
   }).then(handle);
 }
 
-export function getUserOrderHistory(userId) {
-  return fetch(`${BASE}/orders/history/${userId}`).then(handle);
+export function getUserOrderHistory() {
+  const token = localStorage.getItem('token');
+  if (!token) return Promise.reject(new Error('Not authenticated'));
+  
+  // Changed from /orders/history/:userId to /orders/history
+  // Server now uses authenticated user ID from token (prevents IDOR)
+  return fetch(`${BASE}/orders/history`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  }).then(handle);
 }

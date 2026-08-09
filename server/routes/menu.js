@@ -1,32 +1,15 @@
 const express = require('express');
-const MenuItem = require('../models/MenuItem');
+const menuController = require('../controllers/menuController');
+const { cache } = require('../middleware/cache');
 
 const router = express.Router();
 
-// Hardcoded categories
-const CATEGORIES = [
-  { id: 'coffees-teas', name: 'Coffees & Teas', eyebrow: 'Best Drinks', sortOrder: 1 },
-  { id: 'bakery-lunch', name: 'Bakery & Lunch', eyebrow: 'Delicious Food', sortOrder: 2 },
-  { id: 'all-day-brunch', name: 'All-Day Brunch', eyebrow: 'We Also Have', sortOrder: 3 },
-];
-
 // GET /api/menu -> categories with their available items, nested
-router.get('/', async (req, res) => {
-  try {
-    const items = await MenuItem.find({ isAvailable: true }).sort({ sortOrder: 1 }).lean();
+// Cache for 10 minutes (menu doesn't change frequently)
+router.get('/', cache(600), menuController.getMenu.bind(menuController));
 
-    const result = CATEGORIES.map((cat) => ({
-      _id: cat.id,
-      name: cat.name,
-      eyebrow: cat.eyebrow,
-      sortOrder: cat.sortOrder,
-      items: items.filter((i) => i.category === cat.id),
-    }));
-
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to load menu.' });
-  }
-});
+// GET /api/menu/categories -> list all categories
+// Cache for 15 minutes (categories change even less frequently)
+router.get('/categories', cache(900), menuController.getCategories.bind(menuController));
 
 module.exports = router;

@@ -5,6 +5,8 @@ import { HERO_MENU } from '../utils/images';
 import { menuItemImg } from '../utils/images';
 import { MenuColumn, MenuDivider } from '../components/MenuItems';
 import Newsletter from '../components/Newsletter';
+import LoadingSpinner from '../components/LoadingSpinner';
+import ErrorMessage from '../components/ErrorMessage';
 
 function BrunchCard({ item, onAdd }) {
   const [added, setAdded] = useState(false);
@@ -32,10 +34,27 @@ function BrunchCard({ item, onAdd }) {
 
 export default function Menu() {
   const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const { addToCart } = useCart();
 
+  const loadMenu = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await getMenu();
+      setCategories(data);
+    } catch (err) {
+      console.error('Failed to load menu:', err);
+      setError(err.message || 'Failed to load menu items');
+      setCategories([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    getMenu().then(setCategories).catch(() => setCategories([]));
+    loadMenu();
   }, []);
 
   const coffee = categories.find((c) => c.name === 'Coffees & Teas');
@@ -60,36 +79,44 @@ export default function Menu() {
 
       <section className="section menu-page-section">
         <div className="container">
-          <div className="menu-grid">
-            <MenuColumn
-              eyebrow="Best Drinks"
-              title="Coffees & Teas"
-              items={coffee?.items}
-              onAdd={handleAdd}
-              showAdd
-            />
-            <MenuDivider />
-            <MenuColumn
-              eyebrow="Delicious Food"
-              title="Bakery & Lunch"
-              items={bakery?.items}
-              onAdd={handleAdd}
-              showAdd
-            />
-          </div>
+          {loading ? (
+            <LoadingSpinner message="Loading menu..." size="large" />
+          ) : error ? (
+            <ErrorMessage message={error} onRetry={loadMenu} type="error" />
+          ) : (
+            <div className="menu-grid">
+              <MenuColumn
+                eyebrow="Best Drinks"
+                title="Coffees & Teas"
+                items={coffee?.items}
+                onAdd={handleAdd}
+                showAdd
+              />
+              <MenuDivider />
+              <MenuColumn
+                eyebrow="Delicious Food"
+                title="Bakery & Lunch"
+                items={bakery?.items}
+                onAdd={handleAdd}
+                showAdd
+              />
+            </div>
+          )}
         </div>
       </section>
 
-      <section className="section brunch-grid-section">
-        <div className="container">
-          <h2 className="brunch-grid-title">All Day Brunch</h2>
-          <div className="brunch-grid">
-            {brunch?.items.map((it) => (
-              <BrunchCard key={it._id} item={it} onAdd={handleAdd} />
-            ))}
+      {!loading && !error && (
+        <section className="section brunch-grid-section">
+          <div className="container">
+            <h2 className="brunch-grid-title">All Day Brunch</h2>
+            <div className="brunch-grid">
+              {brunch?.items.map((it) => (
+                <BrunchCard key={it._id} item={it} onAdd={handleAdd} />
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <Newsletter />
     </>

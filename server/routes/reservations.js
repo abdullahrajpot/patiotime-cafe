@@ -1,10 +1,11 @@
 const express = require('express');
 const Reservation = require('../models/Reservation');
+const { validateReservation } = require('../middleware/validation');
 
 const router = express.Router();
 
 // POST /api/reservations - Create new reservation
-router.post('/', async (req, res) => {
+router.post('/', validateReservation, async (req, res) => {
   try {
     const { name, email, phone, date, time, guests, specialRequests } = req.body;
 

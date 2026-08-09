@@ -1,10 +1,11 @@
 const express = require('express');
 const Contact = require('../models/Contact');
+const { validateContact } = require('../middleware/validation');
 
 const router = express.Router();
 
 // POST /api/contact - Submit contact form
-router.post('/', async (req, res) => {
+router.post('/', validateContact, async (req, res) => {
   try {
     const { name, email, subject, message } = req.body;
 

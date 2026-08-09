@@ -1,44 +1,46 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { register } from '../api';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { register as registerUser } from '../api';
 import { HERO_ABOUT } from '../utils/images';
+import LoadingSpinner from '../components/LoadingSpinner';
+import ErrorMessage from '../components/ErrorMessage';
+
+// Validation schema
+const registerSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Please enter a valid email address'),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ['confirmPassword'],
+});
 
 export default function Register() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    phone: '',
-    address: ''
-  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(registerSchema),
+  });
+
+  const onSubmit = async (data) => {
     setError('');
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-
-    // Validate passwords match
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
     setLoading(true);
 
     try {
-      const { confirmPassword, ...dataToSend } = formData;
-      const response = await register(dataToSend);
+      const { confirmPassword, ...dataToSend } = data;
+      const response = await registerUser(dataToSend);
       
       // Save token and user data to localStorage
       localStorage.setItem('token', response.token);
@@ -77,22 +79,22 @@ export default function Register() {
               <p className="auth-subtitle">Join PatioTime Cafe</p>
 
               {error && (
-                <div className="form-message error">{error}</div>
+                <ErrorMessage message={error} type="error" />
               )}
 
-              <form onSubmit={handleSubmit} className="auth-form">
+              <form onSubmit={handleSubmit(onSubmit)} className="auth-form">
                 <div className="form-row">
                   <label htmlFor="name">Full Name *</label>
                   <input
                     type="text"
                     id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                    className="form-input"
+                    {...register('name')}
+                    className={`form-input ${errors.name ? 'error' : ''}`}
                     placeholder="John Doe"
                   />
+                  {errors.name && (
+                    <span className="error-text">{errors.name.message}</span>
+                  )}
                 </div>
 
                 <div className="form-row">
@@ -100,13 +102,13 @@ export default function Register() {
                   <input
                     type="email"
                     id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    className="form-input"
+                    {...register('email')}
+                    className={`form-input ${errors.email ? 'error' : ''}`}
                     placeholder="your@email.com"
                   />
+                  {errors.email && (
+                    <span className="error-text">{errors.email.message}</span>
+                  )}
                 </div>
 
                 <div className="form-row">
@@ -114,9 +116,7 @@ export default function Register() {
                   <input
                     type="tel"
                     id="phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
+                    {...register('phone')}
                     className="form-input"
                     placeholder="+1 234 567 8900"
                   />
@@ -127,9 +127,7 @@ export default function Register() {
                   <input
                     type="text"
                     id="address"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleChange}
+                    {...register('address')}
                     className="form-input"
                     placeholder="Your address"
                   />
@@ -140,14 +138,13 @@ export default function Register() {
                   <input
                     type="password"
                     id="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
-                    minLength="6"
-                    className="form-input"
+                    {...register('password')}
+                    className={`form-input ${errors.password ? 'error' : ''}`}
                     placeholder="Minimum 6 characters"
                   />
+                  {errors.password && (
+                    <span className="error-text">{errors.password.message}</span>
+                  )}
                 </div>
 
                 <div className="form-row">
@@ -155,18 +152,24 @@ export default function Register() {
                   <input
                     type="password"
                     id="confirmPassword"
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    required
-                    minLength="6"
-                    className="form-input"
+                    {...register('confirmPassword')}
+                    className={`form-input ${errors.confirmPassword ? 'error' : ''}`}
                     placeholder="Re-enter your password"
                   />
+                  {errors.confirmPassword && (
+                    <span className="error-text">{errors.confirmPassword.message}</span>
+                  )}
                 </div>
 
                 <button type="submit" className="btn btn-solid btn-full" disabled={loading}>
-                  {loading ? 'Creating Account...' : 'Create Account'}
+                  {loading ? (
+                    <>
+                      <LoadingSpinner size="small" inline />
+                      <span>Creating Account...</span>
+                    </>
+                  ) : (
+                    'Create Account'
+                  )}
                 </button>
               </form>
 

@@ -2,18 +2,28 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const MenuItem = require('../models/MenuItem');
+const Category = require('../models/Category');
 const Reservation = require('../models/Reservation');
 const Contact = require('../models/Contact');
 const { requireAdmin } = require('../middleware/auth');
+const { 
+  validateMenuItem, 
+  validateOrderStatus, 
+  validateReservationStatus, 
+  validateContactStatus 
+} = require('../middleware/validation');
+const orderController = require('../controllers/orderController');
+const menuController = require('../controllers/menuController');
+const { ensureDefaultCategories, resolveCategoryId, DEFAULT_CATEGORIES } = require('../utils/ensureCategories');
+const { invalidateOnChange } = require('../middleware/cache');
 
 const router = express.Router();
 
 // Apply admin authentication to ALL routes in this file
 router.use(requireAdmin);
-
-const STATUSES = ['received', 'preparing', 'ready', 'completed', 'cancelled'];
 
 // Configure multer for image uploads
 const storage = multer.diskStorage({
@@ -54,47 +64,13 @@ const upload = multer({
 // ========== ORDER MANAGEMENT ==========
 
 // GET /api/admin/orders?status= -> order board list
-router.get('/orders', async (req, res) => {
-  try {
-    const { status } = req.query;
-    const filter = status && status !== 'all' ? { status } : {};
-    const orders = await Order.find(filter).sort({ createdAt: -1 }).lean();
+router.get('/orders', orderController.getAllOrders.bind(orderController));
 
-    res.json(
-      orders.map((o) => ({
-        id: o._id,
-        order_code: o.orderCode,
-        customer_name: o.customerName,
-        customer_phone: o.customerPhone,
-        order_type: o.orderType,
-        address: o.address,
-        items: o.items,
-        subtotal: o.subtotal,
-        tax: o.tax,
-        total: o.total,
-        status: o.status,
-        created_at: o.createdAt,
-      }))
-    );
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to load orders.' });
-  }
-});
+// GET /api/admin/orders/:id -> get single order with full details (no masking)
+router.get('/orders/:id', orderController.getOrderById.bind(orderController));
 
 // PATCH /api/admin/orders/:id/status -> advance/change an order's status
-router.patch('/orders/:id/status', async (req, res) => {
-  try {
-    const { status } = req.body;
-    if (!STATUSES.includes(status)) {
-      return res.status(400).json({ error: 'Invalid status.' });
-    }
-    const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
-    if (!order) return res.status(404).json({ error: 'Order not found.' });
-    res.json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to update order.' });
-  }
-});
+router.patch('/orders/:id/status', validateOrderStatus, orderController.updateOrderStatus.bind(orderController));
 
 // ========== IMAGE UPLOAD ==========
 
@@ -129,27 +105,50 @@ router.post('/upload', (req, res) => {
 // GET /api/admin/menu -> get all menu items
 router.get('/menu', async (req, res) => {
   try {
-    const items = await MenuItem.find().sort({ sortOrder: 1 }).lean();
+    const items = await MenuItem.find()
+      .populate('category')
+      .sort({ sortOrder: 1 })
+      .lean();
     res.json(items);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Failed to load menu items.' });
   }
 });
 
 // POST /api/admin/menu -> create new menu item
-router.post('/menu', async (req, res) => {
+router.post('/menu', validateMenuItem, invalidateOnChange(['/menu', '/categories']), async (req, res) => {
   try {
     const { name, description, price, category, badge, image, sortOrder } = req.body;
 
+    console.log('📝 Creating menu item with data:', { name, price, category });
+
     if (!name || !price || !category) {
       return res.status(400).json({ error: 'Name, price, and category are required.' });
+    }
+
+    console.log('🔍 Resolving category:', category);
+    let categoryId = await resolveCategoryId(category);
+
+    if (!categoryId) {
+      await ensureDefaultCategories();
+      categoryId = await resolveCategoryId(category);
+    }
+
+    if (!categoryId) {
+      const allCategories = await Category.find({}, 'name slug');
+      console.error('❌ Category not found:', category, 'Available:', allCategories);
+      return res.status(400).json({
+        error: `Category '${category}' not found. Please ensure categories are created first.`,
+        availableCategories: allCategories.map((c) => ({ name: c.name, slug: c.slug })),
+      });
     }
 
     const item = await MenuItem.create({
       name,
       description: description || '',
       price,
-      category,
+      category: categoryId,
       badge: badge || null,
       image: image || null,
       sortOrder: sortOrder || 1,
@@ -157,17 +156,27 @@ router.post('/menu', async (req, res) => {
     });
 
     const populatedItem = await MenuItem.findById(item._id).populate('category');
+    console.log('✅ Menu item created successfully:', populatedItem.name);
     res.status(201).json(populatedItem);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to create menu item.' });
+    console.error('❌ Error creating menu item:', err);
+    res.status(500).json({ error: 'Failed to create menu item.', details: err.message });
   }
 });
 
 // PUT /api/admin/menu/:id -> update menu item
-router.put('/menu/:id', async (req, res) => {
+router.put('/menu/:id', validateMenuItem, invalidateOnChange(['/menu', '/categories']), async (req, res) => {
   try {
     const { name, description, price, category, badge, image, sortOrder, isAvailable } = req.body;
+
+    let categoryId = category ? await resolveCategoryId(category) : undefined;
+    if (category && !categoryId) {
+      await ensureDefaultCategories();
+      categoryId = await resolveCategoryId(category);
+    }
+    if (category && !categoryId) {
+      return res.status(400).json({ error: `Category '${category}' not found.` });
+    }
 
     const item = await MenuItem.findByIdAndUpdate(
       req.params.id,
@@ -175,7 +184,7 @@ router.put('/menu/:id', async (req, res) => {
         name,
         description,
         price,
-        category,
+        category: categoryId,
         badge: badge || null,
         image: image || null,
         sortOrder,
@@ -187,13 +196,14 @@ router.put('/menu/:id', async (req, res) => {
     if (!item) return res.status(404).json({ error: 'Menu item not found.' });
     res.json(item);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to update menu item.' });
+    console.error('Error updating menu item:', err);
+    res.status(500).json({ error: 'Failed to update menu item.', details: err.message });
   }
 });
 
 // DELETE /api/admin/menu/:id -> delete menu item
-router.delete('/menu/:id', async (req, res) => {
+// DELETE /api/admin/menu/:id -> delete menu item
+router.delete('/menu/:id', invalidateOnChange(['/menu', '/categories']), async (req, res) => {
   try {
     const item = await MenuItem.findById(req.params.id);
     if (!item) return res.status(404).json({ error: 'Menu item not found.' });
@@ -227,6 +237,22 @@ router.get('/categories', async (req, res) => {
   }
 });
 
+// POST /api/admin/categories/init -> ensure default categories exist (with slugs)
+router.post('/categories/init', async (req, res) => {
+  try {
+    await ensureDefaultCategories();
+    const categories = await Category.find().sort({ sortOrder: 1 });
+    res.json({
+      message: 'Categories verified successfully',
+      count: categories.length,
+      categories,
+    });
+  } catch (err) {
+    console.error('Error initializing categories:', err);
+    res.status(500).json({ error: 'Failed to initialize categories.' });
+  }
+});
+
 // ========== RESERVATION MANAGEMENT ==========
 
 // GET /api/admin/reservations -> get all reservations
@@ -242,7 +268,7 @@ router.get('/reservations', async (req, res) => {
 });
 
 // PATCH /api/admin/reservations/:id/status -> update reservation status
-router.patch('/reservations/:id/status', async (req, res) => {
+router.patch('/reservations/:id/status', validateReservationStatus, async (req, res) => {
   try {
     const { status } = req.body;
     const validStatuses = ['pending', 'confirmed', 'cancelled', 'completed'];
@@ -295,7 +321,7 @@ router.get('/contacts', async (req, res) => {
 });
 
 // PATCH /api/admin/contacts/:id/status -> update contact status
-router.patch('/contacts/:id/status', async (req, res) => {
+router.patch('/contacts/:id/status', validateContactStatus, async (req, res) => {
   try {
     const { status } = req.body;
     const validStatuses = ['new', 'read', 'replied'];

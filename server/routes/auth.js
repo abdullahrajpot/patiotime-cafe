@@ -1,4 +1,5 @@
 const express = require('express');
+const { validateRegister, validateLogin } = require('../middleware/validation');
 
 // Check dependencies
 let jwt, User, bcrypt;
@@ -25,11 +26,16 @@ try {
 
 const router = express.Router();
 
-// JWT Secret (should be in .env in production)
-const JWT_SECRET = process.env.JWT_SECRET || 'patiotime-secret-key-change-this-in-production';
+// JWT Secret must be set in environment variables
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  console.error('❌ FATAL: JWT_SECRET environment variable is not set!');
+  process.exit(1);
+}
 
 // Register new user
-router.post('/register', async (req, res) => {
+router.post('/register', validateRegister, async (req, res) => {
   try {
     const { name, email, password, phone, address } = req.body;
 
@@ -86,7 +92,7 @@ router.post('/register', async (req, res) => {
 });
 
 // Login user
-router.post('/login', async (req, res) => {
+router.post('/login', validateLogin, async (req, res) => {
   try {
     const { email, password } = req.body;
 

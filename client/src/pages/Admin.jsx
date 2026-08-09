@@ -7,6 +7,7 @@ import {
   createMenuItem, 
   updateMenuItem, 
   deleteMenuItem,
+  initCategories,
   getAdminReservations,
   updateReservationStatus,
   deleteReservation,
@@ -14,6 +15,8 @@ import {
   updateContactStatus,
   deleteContact
 } from '../api';
+import LoadingSpinner from '../components/LoadingSpinner';
+import ErrorMessage from '../components/ErrorMessage';
 
 const STATUSES = ['received', 'preparing', 'ready', 'completed', 'cancelled'];
 const FILTERS = ['all', ...STATUSES];
@@ -165,9 +168,27 @@ function OrdersTab() {
     return () => clearInterval(id);
   }, [load]);
 
-  const handleStatusChange = async (id, status) => {
-    await updateOrderStatus(id, status);
-    load();
+  const handleStatusChange = async (id, status, currentStatus) => {
+    try {
+      await updateOrderStatus(id, status);
+      load();
+      alert('✅ Order status updated successfully!');
+    } catch (err) {
+      console.error('Status update failed:', err);
+      alert(`❌ ${err.message || 'Failed to update status'}`);
+    }
+  };
+
+  // Get valid next statuses based on current status
+  const getValidNextStatuses = (currentStatus) => {
+    const transitions = {
+      received: ['preparing', 'cancelled'],
+      preparing: ['ready', 'cancelled'],
+      ready: ['completed', 'cancelled'],
+      completed: [], // Final state
+      cancelled: [], // Final state
+    };
+    return transitions[currentStatus] || [];
   };
 
   return (
@@ -217,9 +238,27 @@ function OrdersTab() {
                 <span>Total</span><span>${o.total.toFixed(2)}</span>
               </div>
               <div className="order-card-actions">
-                <select value={o.status} onChange={(e) => handleStatusChange(o.id, e.target.value)}>
-                  {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
+                {getValidNextStatuses(o.status).length > 0 ? (
+                  <select 
+                    value={o.status} 
+                    onChange={(e) => handleStatusChange(o.id, e.target.value, o.status)}
+                    style={{ padding: '8px 12px', fontSize: '13px' }}
+                  >
+                    <option value={o.status}>Current: {o.status}</option>
+                    {getValidNextStatuses(o.status).map((s) => (
+                      <option key={s} value={s}>→ Change to: {s}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <span style={{ 
+                    padding: '8px 12px', 
+                    fontSize: '13px', 
+                    color: 'var(--muted)',
+                    fontStyle: 'italic' 
+                  }}>
+                    {o.status} (final)
+                  </span>
+                )}
               </div>
             </div>
           ))}
@@ -265,6 +304,8 @@ function MenuTab() {
 
   useEffect(() => {
     loadMenu();
+    // Ensure DB has categories with slugs (fixes "Category not found" on create)
+    initCategories().catch((err) => console.warn('Category init:', err.message));
   }, []);
 
   const handleFileChange = (e) => {
@@ -296,6 +337,21 @@ function MenuTab() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!formData.name.trim() || formData.name.trim().length < 2) {
+      alert('Item name must be at least 2 characters.');
+      return;
+    }
+    if (!formData.category) {
+      alert('Please select a category.');
+      return;
+    }
+    const price = parseFloat(formData.price);
+    if (Number.isNaN(price) || price < 0) {
+      alert('Please enter a valid price.');
+      return;
+    }
+
     try {
       setUploading(true);
       let imageFilename = formData.image;
@@ -305,8 +361,20 @@ function MenuTab() {
         const uploadFormData = new FormData();
         uploadFormData.append('image', selectedFile);
 
-        const uploadResponse = await fetch('/api/admin/upload', {
+        // Get auth token
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('Not authenticated');
+        }
+
+        // Use same BASE URL as other API calls
+        const BASE = import.meta.env.VITE_API_URL || '/api';
+        
+        const uploadResponse = await fetch(`${BASE}/admin/upload`, {
           method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
           body: uploadFormData,
         });
 
@@ -320,21 +388,30 @@ function MenuTab() {
       }
 
       const payload = {
-        ...formData,
-        image: imageFilename,
-        price: parseFloat(formData.price),
-        sortOrder: parseInt(formData.sortOrder),
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        price,
+        category: formData.category,
+        sortOrder: parseInt(formData.sortOrder, 10) || 1,
       };
+
+      if (imageFilename) payload.image = imageFilename;
+      if (formData.badge?.trim()) payload.badge = formData.badge.trim().toUpperCase();
+
+      console.log('📝 Submitting menu item:', payload);
 
       if (editingItem) {
         await updateMenuItem(editingItem._id, payload);
+        console.log('✅ Item updated successfully');
       } else {
         await createMenuItem(payload);
+        console.log('✅ Item created successfully');
       }
 
       loadMenu();
       resetForm();
     } catch (err) {
+      console.error('❌ Error submitting form:', err);
       alert(err.message);
     } finally {
       setUploading(false);
@@ -347,7 +424,8 @@ function MenuTab() {
       name: item.name,
       description: item.description,
       price: item.price.toString(),
-      category: item.category || '',
+      // Extract slug from populated category object
+      category: item.category?.slug || item.category || '',
       badge: item.badge || '',
       image: item.image || '',
       sortOrder: item.sortOrder,
@@ -546,7 +624,7 @@ function MenuTab() {
                       ${item.price.toFixed(2)}
                     </span>
                     <span style={{ fontSize: 12, color: 'var(--muted)' }}>
-                      • Category: {CATEGORIES.find(c => c.value === item.category)?.label || item.category}
+                      • Category: {typeof item.category === 'object' ? item.category?.name : item.category}
                     </span>
                   </div>
                 </div>

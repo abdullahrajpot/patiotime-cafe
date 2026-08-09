@@ -1,7 +1,13 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'patiotime-secret-key-change-this-in-production';
+// JWT_SECRET must be set in environment variables
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  console.error('❌ FATAL: JWT_SECRET environment variable is not set!');
+  process.exit(1);
+}
 
 // Middleware to verify JWT token
 const authenticateToken = async (req, res, next) => {
@@ -59,7 +65,38 @@ const requireAdmin = async (req, res, next) => {
   }
 };
 
+// Middleware for optional authentication (allows both authenticated and guest users)
+const optionalAuth = (req, res, next) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+      // No token provided - continue as guest
+      req.user = null;
+      return next();
+    }
+
+    jwt.verify(token, JWT_SECRET, (err, decoded) => {
+      if (err) {
+        // Invalid token - continue as guest
+        req.user = null;
+        return next();
+      }
+
+      // Valid token - attach user info
+      req.user = decoded;
+      next();
+    });
+  } catch (err) {
+    console.error('Optional auth error:', err);
+    req.user = null;
+    next();
+  }
+};
+
 module.exports = {
   authenticateToken,
-  requireAdmin
+  requireAdmin,
+  optionalAuth
 };

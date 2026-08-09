@@ -3039,3 +3039,83 @@ form input:focus, form select:focus, form textarea:focus {
     font-size: 26px;
   }
 }
+
+
+/* ---------- FORM VALIDATION ERRORS ---------- */
+.form-input.error {
+  border-color: #b5523f !important;
+  background: #fef5f4;
+}
+
+.form-input.error:focus {
+  outline-color: #b5523f;
+  border-color: #b5523f;
+}
+
+.error-text {
+  display: block;
+  color: #b5523f;
+  font-size: 12px;
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+.form-message {
+  padding: 14px 16px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.form-message.error {
+  background: #fef5f4;
+  border: 1px solid #f0c2bd;
+  color: #b5523f;
+}
+
+.form-message.success {
+  background: #e9f6ec;
+  border: 1px solid #b8ddc0;
+  color: #2f8f4e;
+}
+
+.form-message.warning {
+  background: #fdf1de;
+  border: 1px solid #f5d9a6;
+  color: #b8791c;
+}
+
+/* Button with loading spinner */
+.btn-full {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+
+/* ---------- DASHBOARD ---------- */
+.dashboard-action-card {
+  display: block;
+  background: #fff;
+  border: 1px solid var(--line);
+  padding: 24px 20px;
+  text-align: center;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.dashboard-action-card:hover {
+  border-color: var(--gold);
+  box-shadow: 0 4px 12px rgba(197, 160, 89, 0.15);
+  transform: translateY(-2px);
+}
+
+.dashboard-action-card h4 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 500;
+  margin: 0;
+}

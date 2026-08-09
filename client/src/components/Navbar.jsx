@@ -67,6 +67,12 @@ export default function Navbar() {
           <li><NavLink to="/menu">Our Menu</NavLink></li>
           <li><NavLink to="/reservation">Reservation</NavLink></li>
           <li><NavLink to="/contact">Contact</NavLink></li>
+          {user && (
+            <li><NavLink to="/dashboard">Dashboard</NavLink></li>
+          )}
+          {user && user.role === 'admin' && (
+            <li><NavLink to="/admin">Admin Panel</NavLink></li>
+          )}
         </ul>
 
         <div className="nav-actions">
@@ -120,6 +126,12 @@ export default function Navbar() {
             <NavLink to="/menu" onClick={closeMobileMenu}>Our Menu</NavLink>
             <NavLink to="/reservation" onClick={closeMobileMenu}>Reservation</NavLink>
             <NavLink to="/contact" onClick={closeMobileMenu}>Contact</NavLink>
+            {user && (
+              <NavLink to="/dashboard" onClick={closeMobileMenu}>Dashboard</NavLink>
+            )}
+            {user && user.role === 'admin' && (
+              <NavLink to="/admin" onClick={closeMobileMenu}>Admin Panel</NavLink>
+            )}
             <NavLink to="/cart" onClick={closeMobileMenu} className="mobile-cart-link">
               🛒 Cart {count > 0 && `(${count})`}
             </NavLink>

@@ -1,32 +1,38 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { login } from '../api';
 import { HERO_ABOUT } from '../utils/images';
+import LoadingSpinner from '../components/LoadingSpinner';
+import ErrorMessage from '../components/ErrorMessage';
+
+// Validation schema
+const loginSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
 
 export default function Login() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-    setError('');
-  };
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(loginSchema),
+  });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const onSubmit = async (data) => {
     setError('');
     setLoading(true);
 
     try {
-      const response = await login(formData);
+      const response = await login(data);
       
       // Save token and user data to localStorage
       localStorage.setItem('token', response.token);
@@ -65,22 +71,22 @@ export default function Login() {
               <p className="auth-subtitle">Sign in to your account</p>
 
               {error && (
-                <div className="form-message error">{error}</div>
+                <ErrorMessage message={error} type="error" />
               )}
 
-              <form onSubmit={handleSubmit} className="auth-form">
+              <form onSubmit={handleSubmit(onSubmit)} className="auth-form">
                 <div className="form-row">
                   <label htmlFor="email">Email Address</label>
                   <input
                     type="email"
                     id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    className="form-input"
+                    {...register('email')}
+                    className={`form-input ${errors.email ? 'error' : ''}`}
                     placeholder="your@email.com"
                   />
+                  {errors.email && (
+                    <span className="error-text">{errors.email.message}</span>
+                  )}
                 </div>
 
                 <div className="form-row">
@@ -88,18 +94,24 @@ export default function Login() {
                   <input
                     type="password"
                     id="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
-                    minLength="6"
-                    className="form-input"
+                    {...register('password')}
+                    className={`form-input ${errors.password ? 'error' : ''}`}
                     placeholder="Enter your password"
                   />
+                  {errors.password && (
+                    <span className="error-text">{errors.password.message}</span>
+                  )}
                 </div>
 
                 <button type="submit" className="btn btn-solid btn-full" disabled={loading}>
-                  {loading ? 'Signing In...' : 'Sign In'}
+                  {loading ? (
+                    <>
+                      <LoadingSpinner size="small" inline />
+                      <span>Signing In...</span>
+                    </>
+                  ) : (
+                    'Sign In'
+                  )}
                 </button>
               </form>
 
