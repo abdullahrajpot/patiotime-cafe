@@ -16,6 +16,9 @@ const { errorHandler, notFound } = require('./middleware/errorHandler');
 
 const app = express();
 
+// Trust proxy - Required for Railway deployment
+app.set('trust proxy', 1);
+
 // CORS configuration - Allow frontend domain
 const allowedOrigins = [
   'http://localhost:3000',

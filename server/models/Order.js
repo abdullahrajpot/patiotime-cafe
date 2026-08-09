@@ -50,12 +50,12 @@ const orderSchema = new mongoose.Schema(
 // ========================================
 // INDEXES FOR PERFORMANCE OPTIMIZATION
 // ========================================
+// Note: orderCode unique index already defined in schema above
 
 // Single field indexes for common queries
-orderSchema.index({ orderCode: 1 }); // Already exists - for order tracking (unique)
-orderSchema.index({ user: 1 }); // Already exists - for user order history
-orderSchema.index({ status: 1 }); // Already exists - for filtering by status
-orderSchema.index({ createdAt: -1 }); // Already exists - for sorting by date
+orderSchema.index({ user: 1 }); // User order history
+orderSchema.index({ status: 1 }); // Filter by status
+orderSchema.index({ createdAt: -1 }); // Sort by date
 
 // Compound indexes for complex queries
 orderSchema.index({ user: 1, status: 1 }); // User's orders filtered by status

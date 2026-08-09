@@ -66,9 +66,7 @@ userSchema.methods.toJSON = function() {
 // ========================================
 // INDEXES FOR PERFORMANCE OPTIMIZATION
 // ========================================
-
-// Unique index on email (already enforced by unique: true in schema)
-userSchema.index({ email: 1 }, { unique: true }); // Login lookup
+// Note: email unique index already defined in schema above
 
 // Single field indexes
 userSchema.index({ role: 1 }); // Filter by role (admin vs customer)
