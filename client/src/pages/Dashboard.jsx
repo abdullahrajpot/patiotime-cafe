@@ -38,14 +38,17 @@ const Dashboard = () => {
       setOrders(orderData);
     } catch (err) {
       console.error('Dashboard error:', err);
-      setError(err.message || 'Failed to load dashboard data');
-      
-      // If unauthorized, redirect to login
-      if (err.message.includes('authenticated') || err.message.includes('token')) {
+      const msg = err.message || 'Failed to load dashboard data';
+
+      // Stale token from local dev or expired session — force re-login
+      if (/token|authenticated|403|401/i.test(msg)) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         navigate('/login');
+        return;
       }
+
+      setError(msg);
     } finally {
       setLoading(false);
     }

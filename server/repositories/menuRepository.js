@@ -4,6 +4,13 @@
 
 const MenuItem = require('../models/MenuItem');
 const Category = require('../models/Category');
+const {
+  ensureDefaultCategories,
+  migrateLegacyMenuCategories,
+  buildCategoryLookup,
+  getCategoryIdString,
+  resolveCategoryRef,
+} = require('../utils/ensureCategories');
 
 class MenuRepository {
   // ========== MENU ITEMS ==========
@@ -100,10 +107,10 @@ class MenuRepository {
   }
 
   /**
-   * Find active categories
+   * Find active categories (includes legacy docs without isActive field)
    */
   async findActiveCategories() {
-    return Category.find({ isActive: true }).sort({ sortOrder: 1 }).lean();
+    return Category.find({ isActive: { $ne: false } }).sort({ sortOrder: 1 }).lean();
   }
 
   /**
@@ -146,21 +153,42 @@ class MenuRepository {
   }
 
   /**
-   * Get menu with categories and items grouped
+   * Get menu with categories and items grouped (no populate — safe for legacy data)
    */
   async getMenuWithCategories() {
-    const categories = await this.findActiveCategories();
-    const items = await this.findAvailableItems(true);
+    await ensureDefaultCategories();
+    await migrateLegacyMenuCategories();
 
-    return categories.map(cat => ({
+    let categories = await this.findActiveCategories();
+    if (!categories.length) {
+      categories = await this.findCategories();
+    }
+
+    const items = await MenuItem.find({ isAvailable: true }).sort({ sortOrder: 1 }).lean();
+    const lookup = buildCategoryLookup(categories);
+
+    return categories.map((cat) => ({
       _id: cat._id,
       name: cat.name,
       eyebrow: cat.eyebrow,
       slug: cat.slug,
       sortOrder: cat.sortOrder,
-      items: items.filter(item => 
-        item.category && item.category._id.toString() === cat._id.toString()
-      )
+      items: items
+        .filter((item) => getCategoryIdString(item.category, lookup) === String(cat._id))
+        .map(({ category, ...item }) => item),
+    }));
+  }
+
+  /**
+   * Attach populated category objects without Mongoose populate
+   */
+  async attachCategories(items) {
+    const categories = await Category.find().lean();
+    const lookup = buildCategoryLookup(categories);
+
+    return items.map((item) => ({
+      ...item,
+      category: resolveCategoryRef(item.category, lookup),
     }));
   }
 }

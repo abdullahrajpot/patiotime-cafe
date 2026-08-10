@@ -17,7 +17,7 @@ const {
 } = require('../middleware/validation');
 const orderController = require('../controllers/orderController');
 const menuController = require('../controllers/menuController');
-const { ensureDefaultCategories, resolveCategoryId, DEFAULT_CATEGORIES } = require('../utils/ensureCategories');
+const { ensureDefaultCategories, resolveCategoryId, buildCategoryLookup, resolveCategoryRef, migrateLegacyMenuCategories } = require('../utils/ensureCategories');
 const { invalidateOnChange } = require('../middleware/cache');
 
 const router = express.Router();
@@ -25,15 +25,17 @@ const router = express.Router();
 // Apply admin authentication to ALL routes in this file
 router.use(requireAdmin);
 
+const uploadDir = process.env.UPLOAD_DIR
+  ? path.resolve(__dirname, process.env.UPLOAD_DIR)
+  : path.join(__dirname, 'uploads');
+
 // Configure multer for image uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadPath = path.join(__dirname, '../../client/public/images');
-    // Ensure directory exists
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
     }
-    cb(null, uploadPath);
+    cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
     // Generate unique filename: timestamp-originalname
@@ -94,7 +96,7 @@ router.post('/upload', (req, res) => {
     // Return the filename to be saved in database
     res.json({ 
       filename: req.file.filename,
-      path: `/images/${req.file.filename}`,
+      path: `/uploads/${req.file.filename}`,
       message: 'Image uploaded successfully'
     });
   });
@@ -105,14 +107,20 @@ router.post('/upload', (req, res) => {
 // GET /api/admin/menu -> get all menu items
 router.get('/menu', async (req, res) => {
   try {
-    const items = await MenuItem.find()
-      .populate('category')
-      .sort({ sortOrder: 1 })
-      .lean();
-    res.json(items);
+    await migrateLegacyMenuCategories();
+    const items = await MenuItem.find().sort({ sortOrder: 1 }).lean();
+    const categories = await Category.find().lean();
+    const lookup = buildCategoryLookup(categories);
+
+    res.json(
+      items.map((item) => ({
+        ...item,
+        category: resolveCategoryRef(item.category, lookup),
+      }))
+    );
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to load menu items.' });
+    console.error('Admin menu load error:', err);
+    res.status(500).json({ error: 'Failed to load menu items.', details: err.message });
   }
 });
 
@@ -210,7 +218,7 @@ router.delete('/menu/:id', invalidateOnChange(['/menu', '/categories']), async (
 
     // Optionally delete the image file
     if (item.image) {
-      const imagePath = path.join(__dirname, '../../client/public/images', item.image);
+      const imagePath = path.join(uploadDir, item.image);
       if (fs.existsSync(imagePath)) {
         try {
           fs.unlinkSync(imagePath);

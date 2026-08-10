@@ -23,26 +23,31 @@ app.set('trust proxy', 1);
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
-  'http://localhost:5175', // Added for Vite dev server
-  'http://localhost:5174', // Additional Vite ports
-  'https://patiotime-cafe.vercel.app', // Your Vercel frontend
-  process.env.CLIENT_URL
+  'http://localhost:5175',
+  'http://localhost:5174',
+  'https://patiotime-cafe.vercel.app',
+  process.env.CLIENT_URL,
+  ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()) : []),
 ].filter(Boolean);
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.log('CORS blocked origin:', origin); // Debug log
-      callback(new Error('Not allowed by CORS'));
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
     }
+
+    // Allow any Vercel preview/production deployment
+    if (/^https:\/\/[\w-]+\.vercel\.app$/i.test(origin)) {
+      return callback(null, true);
+    }
+
+    console.log('CORS blocked origin:', origin);
+    callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
 };
 
 app.use(cors(corsOptions));
@@ -89,8 +94,18 @@ if (process.env.NODE_ENV === 'production') {
   app.use('/api/auth/register', authLimiter);
 }
 
-// Serve uploaded images
-app.use('/uploads', express.static(path.join(__dirname, '../client/public/images')));
+const { ensureDefaultCategories, migrateLegacyMenuCategories } = require('./utils/ensureCategories');
+
+const uploadsPath = process.env.UPLOAD_DIR
+  ? path.resolve(__dirname, process.env.UPLOAD_DIR)
+  : path.join(__dirname, 'uploads');
+
+if (!require('fs').existsSync(uploadsPath)) {
+  require('fs').mkdirSync(uploadsPath, { recursive: true });
+}
+
+// Serve uploaded images (admin uploads on Railway/production)
+app.use('/uploads', express.static(uploadsPath));
 
 app.use('/api/menu', menuRoutes);
 app.use('/api/orders', orderRoutes);
@@ -129,6 +144,55 @@ app.get('/api/debug/routes', (req, res) => {
   });
 });
 
+// Debug endpoint to check file structure
+app.get('/api/debug/files', (req, res) => {
+  const fs = require('fs');
+  const path = require('path');
+  
+  try {
+    const checkDir = (dirPath) => {
+      try {
+        return fs.existsSync(dirPath);
+      } catch {
+        return false;
+      }
+    };
+    
+    const listDir = (dirPath) => {
+      try {
+        return fs.readdirSync(dirPath);
+      } catch {
+        return [];
+      }
+    };
+    
+    res.json({
+      timestamp: new Date().toISOString(),
+      cwd: process.cwd(),
+      directories: {
+        controllers: {
+          exists: checkDir(path.join(__dirname, 'controllers')),
+          files: listDir(path.join(__dirname, 'controllers'))
+        },
+        services: {
+          exists: checkDir(path.join(__dirname, 'services')),
+          files: listDir(path.join(__dirname, 'services'))
+        },
+        repositories: {
+          exists: checkDir(path.join(__dirname, 'repositories')),
+          files: listDir(path.join(__dirname, 'repositories'))
+        },
+        models: {
+          exists: checkDir(path.join(__dirname, 'models')),
+          files: listDir(path.join(__dirname, 'models'))
+        }
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/health', async (req, res) => {
   const healthCheck = {
     status: 'ok',
@@ -165,12 +229,10 @@ app.get('/api/health', async (req, res) => {
 
   // Check disk space for uploads (basic check)
   try {
-    const uploadPath = path.join(__dirname, '../client/public/images');
-    if (require('fs').existsSync(uploadPath)) {
-      const stats = require('fs').statSync(uploadPath);
+    if (require('fs').existsSync(uploadsPath)) {
       healthCheck.checks.uploads = {
         status: 'ok',
-        directory: 'exists',
+        directory: uploadsPath,
         accessible: true,
       };
     } else {
@@ -293,8 +355,6 @@ const mongooseOptions = {
   socketTimeoutMS: 45000,
 };
 
-const { ensureDefaultCategories } = require('./utils/ensureCategories');
-
 mongoose
   .connect(MONGO_URI, mongooseOptions)
   .then(async () => {
@@ -305,6 +365,7 @@ mongoose
 
     try {
       await ensureDefaultCategories();
+      await migrateLegacyMenuCategories();
       console.log('✅ Default menu categories verified');
     } catch (err) {
       console.error('⚠️ Could not verify categories:', err.message);

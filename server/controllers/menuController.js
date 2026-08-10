@@ -25,7 +25,7 @@ class MenuController {
       res.json(menu);
     } catch (err) {
       console.error('Get menu error:', err);
-      res.status(500).json({ error: 'Failed to load menu' });
+      res.status(500).json({ error: 'Failed to load menu', details: err.message });
     }
   }
 

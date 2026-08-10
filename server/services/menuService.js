@@ -41,7 +41,8 @@ class MenuService {
    * Get all menu items (admin)
    */
   async getAllMenuItems() {
-    return menuRepository.findMenuItems({}, { populate: true });
+    const items = await menuRepository.findMenuItems({}, { sort: { sortOrder: 1 } });
+    return menuRepository.attachCategories(items);
   }
 
   /**

@@ -55,5 +55,16 @@ export const NEWS = [
 ];
 
 export function menuItemImg(filename) {
-  return filename ? img(filename) : img('coffee-1.jpg');
+  if (!filename) return img('coffee-1.jpg');
+  if (filename.startsWith('http://') || filename.startsWith('https://')) return filename;
+  if (filename.startsWith('/uploads/')) {
+    const apiRoot = (import.meta.env.VITE_API_URL || '/api').replace(/\/api\/?$/, '');
+    return `${apiRoot}${filename}`;
+  }
+  // Admin uploads use timestamp prefix — served from backend /uploads
+  if (/^\d+-/.test(filename)) {
+    const apiRoot = (import.meta.env.VITE_API_URL || '/api').replace(/\/api\/?$/, '');
+    return `${apiRoot}/uploads/${filename}`;
+  }
+  return img(filename);
 }
