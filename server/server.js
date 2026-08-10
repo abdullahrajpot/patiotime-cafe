@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const path = require('path');
+const fs = require('fs');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 
@@ -100,12 +101,56 @@ const uploadsPath = process.env.UPLOAD_DIR
   ? path.resolve(__dirname, process.env.UPLOAD_DIR)
   : path.join(__dirname, 'uploads');
 
-if (!require('fs').existsSync(uploadsPath)) {
-  require('fs').mkdirSync(uploadsPath, { recursive: true });
+const publicImagesPath = path.join(__dirname, 'public/images');
+const clientImagesPath = path.join(__dirname, '../client/public/images');
+
+for (const dir of [uploadsPath, publicImagesPath]) {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
 }
 
-// Serve uploaded images (admin uploads on Railway/production)
-app.use('/uploads', express.static(uploadsPath));
+/** Serve menu images: uploads → server/public → client/public (dev monorepo) */
+function resolveImageFile(filename) {
+  const safeName = path.basename(filename);
+  if (!safeName || safeName !== filename || safeName.includes('..')) return null;
+
+  const candidates = [
+    path.join(uploadsPath, safeName),
+    path.join(publicImagesPath, safeName),
+    path.join(clientImagesPath, safeName),
+  ];
+
+  for (const filePath of candidates) {
+    if (fs.existsSync(filePath)) return filePath;
+  }
+  return null;
+}
+
+app.get('/images/:filename', (req, res) => {
+  const filePath = resolveImageFile(decodeURIComponent(req.params.filename));
+  if (!filePath) {
+    return res.status(404).json({ error: 'Image not found', filename: req.params.filename });
+  }
+  res.set('Cache-Control', 'public, max-age=86400');
+  return res.sendFile(filePath);
+});
+
+// Serve uploaded images from backend uploads directory
+const uploadDir = process.env.UPLOAD_DIR 
+  ? path.resolve(__dirname, process.env.UPLOAD_DIR)
+  : path.join(__dirname, 'uploads');
+
+// Create upload directory if it doesn't exist
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Serve images from uploads directory
+app.use('/uploads', express.static(uploadDir));
+app.use('/images', express.static(uploadDir)); // Also serve on /images for compatibility
+
+console.log('📁 Serving images from:', uploadDir);
 
 app.use('/api/menu', menuRoutes);
 app.use('/api/orders', orderRoutes);
@@ -229,7 +274,7 @@ app.get('/api/health', async (req, res) => {
 
   // Check disk space for uploads (basic check)
   try {
-    if (require('fs').existsSync(uploadsPath)) {
+    if (fs.existsSync(uploadsPath)) {
       healthCheck.checks.uploads = {
         status: 'ok',
         directory: uploadsPath,

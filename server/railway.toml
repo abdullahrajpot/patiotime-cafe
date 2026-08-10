@@ -1,6 +1,6 @@
 [build]
 builder = "NIXPACKS"
-buildCommand = "npm install"
+buildCommand = "npm install && node scripts/sync-images.js"
 
 [deploy]
 startCommand = "npm start"

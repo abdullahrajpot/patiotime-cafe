@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Image Serving</title>
+</head>
+<body>
+    <h1>Test Image Serving</h1>
+    
+    <h2>Test 1: Direct Backend Image</h2>
+    <img src="http://localhost:5000/images/1786280211909-coffee-2-(1).jpg" alt="Test" style="width: 300px; border: 2px solid red;">
+    
+    <h2>Test 2: Static Frontend Image</h2>
+    <img src="http://localhost:5173/images/herobg.png" alt="Hero" style="width: 300px; border: 2px solid green;">
+    
+    <h2>Test 3: Another Menu Image</h2>
+    <img src="http://localhost:5000/images/1786343193006-coffee-5-2.jpg" alt="Coffee" style="width: 300px; border: 2px solid blue;">
+    
+    <script>
+        // Log all image load events
+        document.querySelectorAll('img').forEach((img, idx) => {
+            img.onload = () => console.log(`✅ Image ${idx + 1} loaded successfully:`, img.src);
+            img.onerror = () => console.error(`❌ Image ${idx + 1} failed to load:`, img.src);
+        });
+    </script>
+</body>
+</html>

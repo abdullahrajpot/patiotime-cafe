@@ -17,6 +17,7 @@ import {
 } from '../api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
+import { menuItemImg } from '../utils/images';
 
 const STATUSES = ['received', 'preparing', 'ready', 'completed', 'cancelled'];
 const FILTERS = ['all', ...STATUSES];
@@ -432,7 +433,7 @@ function MenuTab() {
     });
     // Set preview for existing image
     if (item.image) {
-      setImagePreview(`/images/${item.image}`);
+      setImagePreview(menuItemImg(item.image));
     }
     setShowForm(true);
   };
@@ -604,7 +605,7 @@ function MenuTab() {
               <div className="card menu-item-card" key={item._id} style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
                 {item.image && (
                   <img
-                    src={`/images/${item.image}`}
+                    src={menuItemImg(item.image)}
                     alt={item.name}
                     className="menu-item-card-img"
                   />

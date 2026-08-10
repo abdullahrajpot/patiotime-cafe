@@ -1,5 +1,19 @@
-/** Public folder image paths (Vite serves /images/* from client/public/images) */
+/**
+ * Resolve image URLs for local dev and split production (Vercel + Railway).
+ * - Static assets (hero, instagram, etc.): served from frontend /assets/
+ * - Dynamic uploads (menu items): served from backend /images/
+ */
+
+export function getApiRoot() {
+  const apiUrl = import.meta.env.VITE_API_URL;
+  if (apiUrl) return apiUrl.replace(/\/api\/?$/, '');
+  return '';
+}
+
+/** Static assets bundled with the frontend (hero, instagram, etc.) */
 export function img(name) {
+  // Static images are in public/images and NOT proxied to backend in production
+  // In dev, we need to NOT proxy these specific static images
   return `/images/${name}`;
 }
 
@@ -54,17 +68,35 @@ export const NEWS = [
   },
 ];
 
+/** Menu item images stored in the database (uploads + seed filenames) */
 export function menuItemImg(filename) {
-  if (!filename) return img('coffee-1.jpg');
-  if (filename.startsWith('http://') || filename.startsWith('https://')) return filename;
-  if (filename.startsWith('/uploads/')) {
-    const apiRoot = (import.meta.env.VITE_API_URL || '/api').replace(/\/api\/?$/, '');
-    return `${apiRoot}${filename}`;
+  if (!filename) {
+    console.warn('⚠️ No filename provided, using default');
+    return img('coffee-1.jpg');
   }
-  // Admin uploads use timestamp prefix — served from backend /uploads
-  if (/^\d+-/.test(filename)) {
-    const apiRoot = (import.meta.env.VITE_API_URL || '/api').replace(/\/api\/?$/, '');
-    return `${apiRoot}/uploads/${filename}`;
+  if (/^https?:\/\//i.test(filename)) {
+    console.log('✅ Full URL detected:', filename);
+    return filename;
   }
-  return img(filename);
+
+  // For local development, use relative path served by Vite proxy
+  // Vite serves public/images/ at /images/ root
+  // This way browser loads from same origin (no CORS issues)
+  const isDev = import.meta.env.DEV;
+  
+  if (isDev) {
+    // In dev, try loading from frontend's public/images first
+    const localUrl = `/images/${filename}`;
+    console.log('🖼️ DEV MODE - Menu image URL:', localUrl, 'for file:', filename);
+    return localUrl;
+  }
+
+  // In production, load from backend API server
+  const apiRoot = getApiRoot();
+  const backendUrl = apiRoot || 'http://localhost:5000';
+  const imageUrl = `${backendUrl}/images/${encodeURIComponent(filename)}`;
+  
+  console.log('🖼️ PROD MODE - Menu image URL:', imageUrl, 'for file:', filename);
+  
+  return imageUrl;
 }

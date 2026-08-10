@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getMenuByCategory } from '../api';
+import { menuItemImg } from '../utils/images';
 
 export default function BrunchCarousel() {
   const [brunchItems, setBrunchItems] = useState([]);
@@ -68,7 +69,7 @@ export default function BrunchCarousel() {
             {displayItems.map((item, index) => (
               <div className="brunch-slide" key={`${item._id}-${index}`}>
                 <img 
-                  src={item.image ? `/images/${item.image}` : '/images/placeholder.jpg'} 
+                  src={menuItemImg(item.image)} 
                   alt={item.name || 'Brunch item'} 
                   loading="lazy" 
                 />
