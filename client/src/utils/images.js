@@ -79,24 +79,12 @@ export function menuItemImg(filename) {
     return filename;
   }
 
-  // For local development, use relative path served by Vite proxy
-  // Vite serves public/images/ at /images/ root
-  // This way browser loads from same origin (no CORS issues)
-  const isDev = import.meta.env.DEV;
+  // CRITICAL: All current menu images are static seed files in public/images/
+  // These exist in the frontend build and should be served from Vercel
+  // Only future uploaded images (if any) would need to be served from backend
   
-  if (isDev) {
-    // In dev, try loading from frontend's public/images first
-    const localUrl = `/images/${filename}`;
-    console.log('🖼️ DEV MODE - Menu image URL:', localUrl, 'for file:', filename);
-    return localUrl;
-  }
-
-  // In production, load from backend API server
-  const apiRoot = getApiRoot();
-  const backendUrl = apiRoot || 'http://localhost:5000';
-  const imageUrl = `${backendUrl}/images/${encodeURIComponent(filename)}`;
-  
-  console.log('🖼️ PROD MODE - Menu image URL:', imageUrl, 'for file:', filename);
-  
-  return imageUrl;
+  // For now, ALL images are served from frontend's public/images in both dev and prod
+  const staticUrl = `/images/${filename}`;
+  console.log('🖼️ Menu image from frontend public/images:', staticUrl);
+  return staticUrl;
 }
