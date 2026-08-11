@@ -13,6 +13,7 @@ import Register from './pages/Register';
 import Admin from './pages/Admin';
 import Dashboard from './pages/Dashboard';
 import ErrorBoundary from './components/ErrorBoundary';
+import GuestRoute from './components/GuestRoute';
 
 export default function App() {
   return (
@@ -27,8 +28,8 @@ export default function App() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/track" element={<Track />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
+          <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
           <Route path="/dashboard" element={<Dashboard />} />
         </Route>
         <Route path="/admin" element={<Admin />} />
