@@ -25,9 +25,9 @@ const router = express.Router();
 // Apply admin authentication to ALL routes in this file
 router.use(requireAdmin);
 
-const uploadDir = process.env.UPLOAD_DIR
-  ? path.resolve(__dirname, process.env.UPLOAD_DIR)
-  : path.join(__dirname, 'uploads');
+// IMPORTANT: Save uploads to client/public/images so they're immediately available
+// Use ../../client (go up from server/routes to mern-cafe root, then into client)
+const uploadDir = path.join(__dirname, '../../client/public/images');
 
 // Configure multer for image uploads
 const storage = multer.diskStorage({

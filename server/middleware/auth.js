@@ -71,8 +71,11 @@ const optionalAuth = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
+    console.log('🔍 [optionalAuth] Token received:', token ? 'YES' : 'NO');
+
     if (!token) {
       // No token provided - continue as guest
+      console.log('🔍 [optionalAuth] No token, continuing as guest');
       req.user = null;
       return next();
     }
@@ -80,16 +83,22 @@ const optionalAuth = (req, res, next) => {
     jwt.verify(token, JWT_SECRET, (err, decoded) => {
       if (err) {
         // Invalid token - continue as guest
+        console.log('🔍 [optionalAuth] Token verification failed:', err.message);
         req.user = null;
         return next();
       }
 
       // Valid token - attach user info
+      console.log('🔍 [optionalAuth] Token verified successfully, user:', {
+        userId: decoded.userId,
+        email: decoded.email,
+        role: decoded.role
+      });
       req.user = decoded;
       next();
     });
   } catch (err) {
-    console.error('Optional auth error:', err);
+    console.error('❌ [optionalAuth] Unexpected error:', err);
     req.user = null;
     next();
   }

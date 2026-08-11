@@ -64,6 +64,8 @@ class OrderService {
   async createOrder(orderData, userId = null) {
     const { customer_name, customer_phone, customer_email, order_type, address, notes, items } = orderData;
 
+    console.log('📦 [orderService.createOrder] Received userId:', userId);
+
     // Validate order type
     const orderType = order_type === 'delivery' ? 'delivery' : 'pickup';
 
@@ -93,6 +95,8 @@ class OrderService {
           total,
           status: 'received',
         });
+        
+        console.log('📦 [orderService.createOrder] Order created with user:', order.user);
       } catch (err) {
         if (err.code !== 11000) throw err; // Not a duplicate key error
       }

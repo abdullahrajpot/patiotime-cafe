@@ -14,6 +14,9 @@ class OrderController {
       const orderData = req.body;
       const userId = req.user ? req.user.userId : null;
 
+      console.log('📦 [createOrder] req.user:', req.user);
+      console.log('📦 [createOrder] userId extracted:', userId);
+
       const result = await orderService.createOrder(orderData, userId);
       
       res.status(201).json(result);
