@@ -172,13 +172,21 @@ function cleanup() {
   return cleaned;
 }
 
-// Run cleanup every 5 minutes
-const cleanupInterval = setInterval(cleanup, 5 * 60 * 1000);
+// Run cleanup every 5 minutes (only in non-test environment)
+let cleanupInterval;
+if (process.env.NODE_ENV !== 'test') {
+  cleanupInterval = setInterval(cleanup, 5 * 60 * 1000);
+}
 
 // Clear interval on process exit
 process.on('exit', () => {
-  clearInterval(cleanupInterval);
+  if (cleanupInterval) {
+    clearInterval(cleanupInterval);
+  }
 });
+
+// Export cleanup interval for testing
+module.exports.cleanupInterval = cleanupInterval;
 
 // Middleware to invalidate cache on data changes
 function invalidateOnChange(patterns) {
